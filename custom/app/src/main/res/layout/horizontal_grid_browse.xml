@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="@android:color/transparent">
+
+    <ScrollView
+        android:id="@+id/novaSidebarScroll"
+        android:layout_width="188dp"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:background="#EA050505"
+        android:clipToPadding="false"
+        android:paddingTop="18dp"
+        android:paddingBottom="18dp">
+
+        <LinearLayout
+            android:id="@+id/novaSidebarItems"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="12dp" />
+    </ScrollView>
+
+    <RelativeLayout
+        android:id="@+id/novaContentRoot"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+
+        <View
+            android:id="@+id/novaBackdropFade"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/nova_library_gradient" />
+
+        <FrameLayout
+            android:id="@+id/rowsFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/statusText"
+            android:layout_below="@+id/infoRow"
+            android:layout_alignParentStart="true"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="0dp" />
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="34dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="12dp"
+            android:layout_toStartOf="@+id/npBug"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif"
+            android:maxLines="1"
+            android:textColor="#FFFFFFFF"
+            android:textStyle="bold"
+            android:textSize="30sp" />
+
+        <LinearLayout
+            android:id="@+id/infoRow"
+            android:layout_width="wrap_content"
+            android:layout_height="22dp"
+            android:layout_below="@+id/title"
+            android:layout_alignStart="@+id/title"
+            android:layout_marginTop="5dp"
+            android:layout_toStartOf="@+id/clock"
+            android:orientation="horizontal" />
+
+        <LinearLayout
+            android:id="@+id/toolBar"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/title"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="34dp"
+            android:alpha=".9"
+            android:dividerPadding="4dp"
+            android:gravity="bottom|end"
+            android:orientation="horizontal"
+            android:showDividers="middle" />
+
+        <TextView
+            android:id="@+id/counter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="42dp"
+            android:layout_marginBottom="12dp"
+            android:fontFamily="sans-serif"
+            android:textAlignment="viewEnd"
+            android:textColor="#CCFFFFFF"
+            android:textSize="16sp"
+            tools:text="0 | 0" />
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/title"
+            android:layout_alignTop="@+id/counter"
+            android:layout_marginTop="4dp"
+            android:alpha=".7"
+            android:fontFamily="sans-serif"
+            android:textColor="#CCFFFFFF"
+            android:textSize="12sp" />
+
+        <org.jellyfin.androidtv.ui.ClockUserView
+            android:id="@+id/clock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignTop="@+id/title"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="34dp" />
+
+        <org.jellyfin.androidtv.ui.NowPlayingView
+            android:id="@+id/npBug"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/clock"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="15dp"
+            android:layout_toStartOf="@+id/clock" />
+
+    </RelativeLayout>
+</LinearLayout>
