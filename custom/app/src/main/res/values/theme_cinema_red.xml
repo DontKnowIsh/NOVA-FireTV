@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="nova_cinema_red_accent">#E50914</color>
+    <color name="nova_cinema_red_bg">#080808</color>
+    <color name="nova_cinema_red_panel">#181818</color>
+    <color name="nova_cinema_red_white">#FFFFFF</color>
+
+    <style name="Theme.Jellyfin.CinemaRed" parent="Theme.Jellyfin">
+        <item name="android:colorPrimary">@color/nova_cinema_red_bg</item>
+        <item name="android:colorPrimaryDark">@color/nova_cinema_red_bg</item>
+        <item name="android:colorAccent">@color/nova_cinema_red_accent</item>
+        <item name="defaultBackground">@color/nova_cinema_red_bg</item>
+        <item name="defaultSearchColor">@color/nova_cinema_red_accent</item>
+        <item name="progressPrimary">@color/nova_cinema_red_accent</item>
+        <item name="progressSecondary">@color/nova_cinema_red_white</item>
+        <item name="popupMenuBackground">@color/nova_cinema_red_panel</item>
+        <item name="android:colorButtonNormal">@color/nova_cinema_red_panel</item>
+        <item name="buttonDefaultNormalBackground">@color/nova_cinema_red_panel</item>
+        <item name="buttonDefaultHighlightBackground">@color/nova_cinema_red_white</item>
+        <item name="inputDefaultHighlightBackground">@color/nova_cinema_red_panel</item>
+        <item name="cardRounding">6dp</item>
+        <item name="buttonRounding">5dp</item>
+        <item name="inputRounding">5dp</item>
+        <item name="popupMenuRounding">5dp</item>
+        <item name="overlayDimDimmedLevel">18%</item>
+        <item name="controlIconBackground">@color/nova_cinema_red_panel</item>
+        <item name="controlIconForegroundActive">@color/nova_cinema_red_accent</item>
+        <item name="controlIconForegroundInactive">@color/nova_cinema_red_white</item>
+        <item name="qrForeground">@color/nova_cinema_red_accent</item>
+        <item name="tile_search_bg">@color/nova_cinema_red_accent</item>
+        <item name="tile_suggestions_bg">@color/nova_cinema_red_accent</item>
+        <item name="tile_port_person_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_port_video_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_land_folder_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_chapter_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_land_tv_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_port_tv_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_actors_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_land_photo_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_port_folder_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_land_series_timer_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_audio_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_artists_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_genres_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_port_grid_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_letters_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_port_guide_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_port_series_timer_bg">@color/nova_cinema_red_panel</item>
+        <item name="tile_port_time_bg">@color/nova_cinema_red_panel</item>
+    </style>
+</resources>
