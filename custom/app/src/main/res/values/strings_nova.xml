@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_theme_cinema_red">Cinema Red</string>
+    <string name="pref_theme_midnight">Midnight</string>
+    <string name="pref_theme_amber">Amber</string>
+</resources>
