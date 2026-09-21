@@ -1,0 +1,110 @@
+name: Build NOVA Fire TV
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "custom/**"
+      - "tools/**"
+      - ".github/workflows/build.yml"
+      - "README.md"
+      - "UPSTREAM.md"
+      - "LICENSE"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build NOVA Fire TV APK + source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout NOVA customization source
+        uses: actions/checkout@v5
+
+      - name: Fetch Jellyfin Android TV v0.19.10
+        run: |
+          git clone --depth 1 --branch v0.19.10 https://github.com/jellyfin/jellyfin-androidtv.git jellyfin-src
+
+      - name: Apply NOVA Fire TV custom files
+        run: |
+          cp -R custom/app/. jellyfin-src/app/
+          python3 tools/apply_customizations.py
+
+      - name: Package corresponding source
+        run: |
+          mkdir -p output
+          zip -qr output/NOVA-FireTV-v1.0.0-source.zip jellyfin-src \
+            -x "jellyfin-src/.git/*" \
+               "jellyfin-src/**/build/*" \
+               "jellyfin-src/.gradle/*"
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build NOVA Fire TV release APK
+        working-directory: jellyfin-src
+        run: ./gradlew assembleRelease -Pjellyfin.version=1.0.0
+
+      - name: Collect APK
+        run: |
+          APK="$(find jellyfin-src/app/build/outputs/apk/release -type f -iname "*.apk" | head -n 1)"
+          test -n "$APK"
+          cp "$APK" output/NOVA-FireTV-v1.0.0.apk
+
+      - name: Upload APK and corresponding source as workflow artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: NOVA-FireTV-v1.0.0
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            output/NOVA-FireTV-v1.0.0.apk
+            output/NOVA-FireTV-v1.0.0-source.zip
+
+      - name: Publish NOVA Fire TV v1.0.0 GitHub Release
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'Publish v1.0.0 release')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > release-notes.md <<'EOF'
+          ## NOVA Fire TV v1.0.0
+
+          First public-ready NOVA Fire TV release.
+
+          NOVA Fire TV is an unofficial custom build/fork of Jellyfin Android TV v0.19.10 for Amazon Fire TV and Fire TV Stick, with a Netflix-style TV interface, cinematic browsing, remote-friendly navigation and NOVA visual customisations.
+
+          I don't know how to code; I designed/tested the changes and the code was made with ChatGPT. Feel free to use it as-is, fork it, improve it, fix things or add your own features.
+
+          This is not an official Jellyfin project and is not endorsed by Jellyfin.
+
+          Downloads:
+          - NOVA-FireTV-v1.0.0.apk
+          - NOVA-FireTV-v1.0.0-source.zip
+
+          Licence: GPL-2.0
+          EOF
+
+          if gh release view v1.0.0 >/dev/null 2>&1; then
+            gh release upload v1.0.0 \
+              output/NOVA-FireTV-v1.0.0.apk \
+              output/NOVA-FireTV-v1.0.0-source.zip \
+              --clobber
+          else
+            gh release create v1.0.0 \
+              output/NOVA-FireTV-v1.0.0.apk \
+              output/NOVA-FireTV-v1.0.0-source.zip \
+              --target "$GITHUB_SHA" \
+              --title "NOVA Fire TV v1.0.0" \
+              --notes-file release-notes.md
+          fi
