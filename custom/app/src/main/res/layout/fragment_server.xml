@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:src="@drawable/nova_setup_space" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/title_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.30" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/warning_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.41" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/users_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.49" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/actions_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.80" />
+
+    <LinearLayout
+        android:id="@+id/branding"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.60">
+        <ImageView
+            android:layout_width="105dp"
+            android:layout_height="70dp"
+            android:contentDescription="@string/app_name"
+            android:scaleType="fitCenter"
+            android:src="@drawable/nova_n_mark" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
+            android:letterSpacing="0.40"
+            android:text="NOVA"
+            android:textColor="#FFFFFFFF"
+            android:textSize="27sp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.34"
+            android:text="YOUR MEDIA UNIVERSE"
+            android:textColor="#FFE9E7EA"
+            android:textSize="9sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/notification"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#DDB20710"
+        android:gravity="center"
+        android:padding="8dp"
+        android:text="@string/server_unsupported_notification"
+        android:textColor="#FFFFFFFF"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.70" />
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:shadowColor="#EE000000"
+        android:shadowRadius="8"
+        android:text="Who's watching?"
+        android:textColor="#FFFFFFFF"
+        android:textSize="31sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/title_top"
+        app:layout_constraintWidth_percent="0.70" />
+
+    <TextView
+        android:id="@+id/no_users_warning"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:gravity="center"
+        android:shadowColor="#EE000000"
+        android:shadowRadius="8"
+        android:text="No accounts on this device yet. Choose Add account to sign in."
+        android:textColor="#FFD0CDD2"
+        android:textSize="15sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/warning_top"
+        app:layout_constraintWidth_percent="0.70" />
+
+    <androidx.leanback.widget.HorizontalGridView
+        android:id="@+id/users"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.25"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/users_top"
+        app:layout_constraintVertical_bias="0"
+        app:layout_constraintWidth_percent="0.70"
+        app:rowHeight="116dp" />
+
+    <LinearLayout
+        android:id="@+id/actions_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.11"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/actions_top"
+        app:layout_constraintVertical_bias="0"
+        app:layout_constraintWidth_percent="0.60">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/add_user_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/nova_concept_connect"
+            android:fontFamily="sans-serif-medium"
+            android:text="Add account"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFFFF"
+            android:textSize="18sp" />
+
+        <org.jellyfin.androidtv.ui.ServerButtonView
+            android:id="@+id/server_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <org.jellyfin.androidtv.ui.ExpandableTextView
+        android:id="@+id/login_disclaimer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="2"
+        android:textColor="#FFC5C2CB"
+        android:textSize="10sp"
+        app:layout_constraintEnd_toEndOf="@id/actions_container"
+        app:layout_constraintStart_toStartOf="@id/actions_container"
+        app:layout_constraintTop_toBottomOf="@id/actions_container" />
+</androidx.constraintlayout.widget.ConstraintLayout>

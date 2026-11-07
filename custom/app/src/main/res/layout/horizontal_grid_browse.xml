@@ -8,7 +8,7 @@
 
     <ScrollView
         android:id="@+id/novaSidebarScroll"
-        android:layout_width="188dp"
+        android:layout_width="164dp"
         android:layout_height="match_parent"
         android:fillViewport="true"
         android:background="#EA050505"

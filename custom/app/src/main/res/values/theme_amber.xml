@@ -7,6 +7,7 @@
     <style name="Theme.Jellyfin.Amber" parent="Theme.Jellyfin">
         <item name="android:colorPrimary">@color/nova_amber_bg</item>
         <item name="android:colorPrimaryDark">@color/nova_amber_bg</item>
+        <item name="android:colorControlHighlight">@color/nova_amber_accent</item>
         <item name="android:colorAccent">@color/nova_amber_accent</item>
         <item name="defaultBackground">@color/nova_amber_bg</item>
         <item name="defaultSearchColor">@color/nova_amber_accent</item>

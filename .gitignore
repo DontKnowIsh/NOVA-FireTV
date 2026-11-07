@@ -1,0 +1,4 @@
+jellyfin-src/
+output/
+*.jks
+*.keystore

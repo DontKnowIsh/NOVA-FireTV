@@ -35,10 +35,6 @@ object HomeHeroStateStore {
 		)
 	}
 
-	fun clear() {
-		// Keep the current hero when focus briefly leaves a card.
-	}
-
 	fun resetToPreview() {
 		_state.value = HomeHeroState()
 	}

@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.genresApi
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemFields
@@ -16,6 +17,11 @@ import org.jellyfin.sdk.model.api.SortOrder
 object NovaBrowseFilters {
 	const val FILTER_FAVOURITES = "favourites"
 	const val FILTER_GENRE = "genre"
+	/** "Recently added": [RECENT_MOVIES] or [RECENT_SHOWS] as the value. */
+	const val FILTER_RECENT = "recent"
+	const val RECENT_MOVIES = "movies"
+	const val RECENT_SHOWS = "shows"
+	private const val RECENT_LIMIT = 100
 
 	private const val GENRE_CACHE_TTL_MS = 5 * 60 * 1000L
 
@@ -141,4 +147,38 @@ object NovaBrowseFilters {
 			.distinctBy { it.lowercase() }
 			.sortedBy { it.lowercase() }
 	}
+
+	/**
+	 * The newest films or shows with new episodes, newest first, across your film
+	 * (or TV) libraries. Libraries ticked under "Exclude from Latest" in your
+	 * Jellyfin profile's Home settings are left out.
+	 */
+	suspend fun loadRecent(api: ApiClient, views: Collection<BaseItemDto>, shows: Boolean): List<BaseItemDto> =
+		withContext(Dispatchers.IO) {
+			val excluded = runCatching {
+				api.userApi.getCurrentUser().content.configuration?.latestItemsExcludes.orEmpty().toSet()
+			}.getOrDefault(emptySet())
+			val libraries = views.filter { view ->
+				val type = if (shows) org.jellyfin.sdk.model.api.CollectionType.TVSHOWS else org.jellyfin.sdk.model.api.CollectionType.MOVIES
+				view.collectionType == type && view.id !in excluded
+			}
+			libraries.flatMap { library ->
+				runCatching {
+					api.itemsApi.getItems(
+						org.jellyfin.sdk.model.api.request.GetItemsRequest(
+							parentId = library.id,
+							includeItemTypes = setOf(if (shows) BaseItemKind.SERIES else BaseItemKind.MOVIE),
+							recursive = true,
+							sortBy = setOf(if (shows) ItemSortBy.DATE_LAST_CONTENT_ADDED else ItemSortBy.DATE_CREATED, ItemSortBy.SORT_NAME),
+							sortOrder = setOf(SortOrder.DESCENDING),
+							limit = RECENT_LIMIT,
+							fields = org.jellyfin.androidtv.data.repository.ItemRepository.itemFields,
+						)
+					).content.items
+				}.getOrDefault(emptyList())
+			}
+				.distinctBy { it.id }
+				.sortedByDescending { (if (shows) it.dateLastMediaAdded else null) ?: it.dateCreated ?: java.time.LocalDateTime.MIN }
+				.take(RECENT_LIMIT)
+		}
 }

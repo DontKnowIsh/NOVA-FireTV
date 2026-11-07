@@ -1,5 +1,7 @@
 package org.jellyfin.androidtv.ui.search.composable
 
+import org.jellyfin.androidtv.ui.withAlpha
+import org.jellyfin.androidtv.ui.nova
 import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -70,15 +72,15 @@ fun SearchVoiceInput(
 				modifier = Modifier
 					.matchParentSize()
 					.scale(scale)
-					.background(Color(0x33E50914), shape = IconButtonDefaults.Shape)
+					.background(nova.accent.withAlpha(0x33), shape = IconButtonDefaults.Shape)
 			)
 		}
 
 		val colors = IconButtonDefaults.colors().copy(
-			containerColor = if (recognizer.status is SpeechRecognizerStatus.Listening) Color(0xFFE50914) else Color(0xEE151515),
+			containerColor = if (recognizer.status is SpeechRecognizerStatus.Listening) nova.accent else nova.surface.withAlpha(0xEE),
 			contentColor = Color.White,
-			focusedContainerColor = Color(0xFFE50914),
-			focusedContentColor = Color.White,
+			focusedContainerColor = nova.accent,
+			focusedContentColor = nova.onAccent,
 		)
 
 		IconButton(

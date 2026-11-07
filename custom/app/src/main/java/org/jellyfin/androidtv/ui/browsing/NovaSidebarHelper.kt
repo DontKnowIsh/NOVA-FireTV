@@ -1,20 +1,26 @@
 package org.jellyfin.androidtv.ui.browsing
 
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.KeyEvent
 import android.view.View
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.ui.graphics.toArgb
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.jellyfin.androidtv.R
+import org.jellyfin.androidtv.ui.NovaTheme
 import org.jellyfin.androidtv.data.repository.UserViewsRepository
 import org.jellyfin.androidtv.ui.itemhandling.ItemLauncher
+import org.jellyfin.androidtv.ui.iptv.NovaIptvActivity
 import org.jellyfin.androidtv.ui.navigation.Destinations
 import org.jellyfin.androidtv.ui.navigation.NavigationRepository
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -37,22 +43,16 @@ fun Fragment.setupNovaSidebar(
 						.firstOrNull { it.name.equals(name, ignoreCase = true) }
 						?.also { remaining.remove(it) }
 
-					fun takeByType(type: CollectionType, excludingName: String? = null) = remaining
-						.firstOrNull { view ->
-							view.collectionType == type &&
-								(excludingName == null || !view.name.equals(excludingName, ignoreCase = true))
-						}
+					fun takeByType(type: CollectionType) = remaining
+						.firstOrNull { view -> view.collectionType == type }
 						?.also { remaining.remove(it) }
 
+					// Collections, then films, TV and music libraries (in the server's order), then the rest.
 					buildList {
 						takeByName("Collections")?.let(::add)
-						takeByName("Indian Movies")?.let(::add)
-						takeByName("Movies")?.let(::add)
-							?: takeByType(CollectionType.MOVIES, "Indian Movies")?.let(::add)
-						takeByName("TV Shows")?.let(::add)
-							?: takeByType(CollectionType.TVSHOWS)?.let(::add)
-						takeByName("Music")?.let(::add)
-							?: takeByType(CollectionType.MUSIC)?.let(::add)
+						listOf(CollectionType.MOVIES, CollectionType.TVSHOWS, CollectionType.MUSIC).forEach { type ->
+							while (true) add(takeByType(type) ?: break)
+						}
 						addAll(remaining)
 					}
 				}
@@ -89,13 +89,13 @@ fun Fragment.setupNovaSidebar(
 								cornerRadius = dp(7).toFloat()
 								setColor(
 									when {
-										focused -> Color.rgb(229, 9, 20)
-										active -> Color.rgb(65, 12, 16)
+										focused -> NovaTheme.accentArgb()
+										active -> NovaTheme.palette.accentSoft.toArgb()
 										else -> Color.TRANSPARENT
 									}
 								)
 								if (focused) {
-									setStroke(dp(1), Color.argb(180, 255, 255, 255))
+									setStroke(dp(2), Color.WHITE)
 								}
 							}
 							setTextColor(Color.WHITE)
@@ -126,14 +126,13 @@ fun Fragment.setupNovaSidebar(
 					if (active) container.tag = button
 				}
 
-				container.addView(TextView(requireContext()).apply {
-					text = "NOVA"
-					setTextColor(Color.rgb(229, 9, 20))
-					textSize = 18f
-					typeface = Typeface.DEFAULT_BOLD
-					letterSpacing = 0.12f
+				container.addView(ImageView(requireContext()).apply {
+					setImageResource(R.drawable.nova_n_mark)
+					scaleType = ImageView.ScaleType.FIT_CENTER
+					contentDescription = "NOVA"
 					isFocusable = false
-					setPadding(dp(8), dp(2), dp(4), dp(18))
+				}, LinearLayout.LayoutParams(dp(52), dp(52)).apply {
+					bottomMargin = dp(8)
 				})
 
 				addButton("Home") {
@@ -141,6 +140,9 @@ fun Fragment.setupNovaSidebar(
 				}
 				addButton("Search") {
 					navigationRepository.navigate(Destinations.search())
+				}
+				addButton("IPTV") {
+					requireContext().startActivity(Intent(requireContext(), NovaIptvActivity::class.java))
 				}
 
 				addLabel("MY LIBRARIES", top = 12, bottom = 6)

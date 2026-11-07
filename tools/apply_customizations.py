@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import base64
 
 root = Path("jellyfin-src")
-
-# NOVA launch branding assets.
-branding_dir = root / "app/src/main/res/drawable-nodpi"
-branding_dir.mkdir(parents=True, exist_ok=True)
-# The old full NOVA logo PNG is no longer used (all startup/home branding uses
-# nova_mark). Do not generate it: AAPT2 can choke on the legacy embedded PNG
-# during release resource compilation.
-(branding_dir / "nova_app_icon.png").write_bytes(base64.b64decode("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"))
 
 # Use a native vector for in-app NOVA branding.  This is intentionally
 # independent of the PNG artwork because older Fire OS builds can fail to
@@ -55,7 +46,6 @@ for logo_user in [
     if logo_user.exists():
         q = logo_user.read_text(encoding="utf-8")
         q = q.replace("R.drawable.app_logo", "R.drawable.nova_mark")
-        q = q.replace("R.drawable.nova_logo", "R.drawable.nova_mark")
         logo_user.write_text(q, encoding="utf-8")
 
 # Build a proper NOVA splash using the vector mark plus the wordmark/tagline.
@@ -113,45 +103,44 @@ if splash_file.exists():
     q = q.replace(old_splash_image, new_splash_image)
     splash_file.write_text(q, encoding="utf-8")
 
-# Fire TV launcher banner using the NOVA logo on a black cinematic background.
-nova_banner = root / "app/src/main/res/drawable/nova_app_banner.xml"
-nova_banner.write_text("""<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="#050505" />
-        </shape>
-    </item>
-    <item android:left="70dp" android:right="70dp" android:top="8dp" android:bottom="8dp">
-        <bitmap
-            android:src="@drawable/nova_mark"
-            android:gravity="center"
-            android:tileMode="disabled" />
-    </item>
-</layer-list>
-""", encoding="utf-8")
-
+# Fire TV launcher banner: NOVA / YOUR MEDIA (assets/nova_tv_banner.png).
 manifest = root / "app/src/main/AndroidManifest.xml"
 m = manifest.read_text(encoding="utf-8")
-m = m.replace('android:banner="@mipmap/app_banner"', 'android:banner="@drawable/nova_app_banner"')
-m = m.replace('android:icon="@mipmap/app_icon"', 'android:icon="@drawable/nova_mark"')
+m = m.replace('android:banner="@mipmap/app_banner"', 'android:banner="@drawable/nova_tv_banner"')
+
+# Private IPTV build: register the in-app playlist browser/player. Provider
+# credentials or playlist URLs are never stored in source; they are entered on
+# the Fire TV and kept in app-private SharedPreferences.
+iptv_activity = """        <activity
+            android:name=".ui.iptv.NovaIptvActivity"
+            android:configChanges="density|screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation|uiMode"
+            android:launchMode="singleTop"
+            android:screenOrientation="landscape"
+            android:windowSoftInputMode="adjustNothing" />
+
+"""
+main_activity_anchor = """        <!-- Main application -->
+        <activity
+            android:name=".ui.browsing.MainActivity"""
+if iptv_activity.strip() not in m:
+    if main_activity_anchor not in m:
+        raise RuntimeError("Could not find MainActivity manifest anchor for NOVA")
+    m = m.replace(
+        """        <!-- Main application -->
+""",
+        """        <!-- Main application -->
+""" + iptv_activity,
+        1,
+    )
+
 manifest.write_text(m, encoding="utf-8")
 
 searchable = root / "app/src/main/res/xml/searchable.xml"
 if searchable.exists():
     q = searchable.read_text(encoding="utf-8")
-    q = q.replace('android:icon="@mipmap/app_icon"', 'android:icon="@drawable/nova_mark"')
     searchable.write_text(q, encoding="utf-8")
 
 # Remove remaining hard-coded Jellyfin branding from startup/about UI.
-select_server = root / "app/src/main/java/org/jellyfin/androidtv/ui/startup/fragment/SelectServerFragment.kt"
-if select_server.exists():
-    q = select_server.read_text(encoding="utf-8")
-    q = q.replace(
-        'binding.appVersion.text = "jellyfin-androidtv ${BuildConfig.VERSION_NAME} ${BuildConfig.BUILD_TYPE}"',
-        'binding.appVersion.text = "NOVA ${BuildConfig.VERSION_NAME}"'
-    )
-    select_server.write_text(q, encoding="utf-8")
 
 about_screen = root / "app/src/main/java/org/jellyfin/androidtv/ui/settings/screen/about/SettingsAboutScreen.kt"
 if about_screen.exists():
@@ -164,826 +153,13 @@ if about_screen.exists():
     about_screen.write_text(q, encoding="utf-8")
 
 
-# ---------------------------------------------------------------------------
-# NOVA first-run / setup experience
-# ---------------------------------------------------------------------------
-# Keep all of Jellyfin's discovery/authentication mechanics, but replace the
-# legacy setup presentation with a cinematic NOVA TV onboarding flow.
-
 drawable_dir = root / "app/src/main/res/drawable"
 drawable_dir.mkdir(parents=True, exist_ok=True)
 
-(drawable_dir / "nova_setup_background.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <gradient
-        android:angle="0"
-        android:startColor="#050505"
-        android:centerColor="#090909"
-        android:endColor="#141414" />
-</shape>
-""", encoding="utf-8")
-
-(drawable_dir / "nova_setup_panel.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#D9141414" />
-    <corners android:radius="10dp" />
-    <stroke android:width="1dp" android:color="#333333" />
-    <padding android:left="24dp" android:top="22dp" android:right="24dp" android:bottom="22dp" />
-</shape>
-""", encoding="utf-8")
-
-(drawable_dir / "nova_setup_button.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_enabled="false">
-        <shape android:shape="rectangle">
-            <solid android:color="#44222222" />
-            <corners android:radius="5dp" />
-        </shape>
-    </item>
-    <item android:state_focused="true">
-        <shape android:shape="rectangle">
-            <solid android:color="#E50914" />
-            <corners android:radius="5dp" />
-            <stroke android:width="2dp" android:color="#FF6670" />
-        </shape>
-    </item>
-    <item android:state_pressed="true">
-        <shape android:shape="rectangle">
-            <solid android:color="#B20710" />
-            <corners android:radius="5dp" />
-        </shape>
-    </item>
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="#2B2B2B" />
-            <corners android:radius="5dp" />
-            <stroke android:width="1dp" android:color="#4B4B4B" />
-        </shape>
-    </item>
-</selector>
-""", encoding="utf-8")
-
-(drawable_dir / "nova_setup_input.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_focused="true">
-        <shape android:shape="rectangle">
-            <solid android:color="#202020" />
-            <corners android:radius="5dp" />
-            <stroke android:width="2dp" android:color="#FFFFFF" />
-            <padding android:left="16dp" android:top="10dp" android:right="16dp" android:bottom="10dp" />
-        </shape>
-    </item>
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="#171717" />
-            <corners android:radius="5dp" />
-            <stroke android:width="1dp" android:color="#555555" />
-            <padding android:left="16dp" android:top="10dp" android:right="16dp" android:bottom="10dp" />
-        </shape>
-    </item>
-</selector>
-""", encoding="utf-8")
-
-styles = root / "app/src/main/res/values/styles.xml"
-st = styles.read_text(encoding="utf-8")
-if 'style name="Nova.Setup.Button"' not in st:
-    st = st.replace(
-        "</resources>",
-        """
-    <style name="Nova.Setup.Button" parent="android:Widget.Button">
-        <item name="android:background">@drawable/nova_setup_button</item>
-        <item name="android:textColor">#FFFFFFFF</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">15sp</item>
-        <item name="android:textAllCaps">false</item>
-        <item name="android:letterSpacing">0.02</item>
-        <item name="android:paddingStart">22dp</item>
-        <item name="android:paddingEnd">22dp</item>
-        <item name="android:paddingTop">10dp</item>
-        <item name="android:paddingBottom">10dp</item>
-        <item name="android:minHeight">44dp</item>
-        <item name="android:stateListAnimator">@null</item>
-    </style>
-
-    <style name="Nova.Setup.Input" parent="android:Widget.EditText">
-        <item name="android:background">@drawable/nova_setup_input</item>
-        <item name="android:textColor">#FFFFFFFF</item>
-        <item name="android:textColorHint">#FF9A9A9A</item>
-        <item name="android:fontFamily">sans-serif</item>
-        <item name="android:textSize">16sp</item>
-        <item name="android:singleLine">true</item>
-        <item name="android:selectAllOnFocus">false</item>
-    </style>
-</resources>
-"""
-    )
-styles.write_text(st, encoding="utf-8")
-
-# Main server-selection page.
-(root / "app/src/main/res/layout/fragment_select_server.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/nova_setup_background"
-    android:orientation="vertical"
-    android:paddingStart="54dp"
-    android:paddingTop="20dp"
-    android:paddingEnd="54dp"
-    android:paddingBottom="28dp">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/nova_mark" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.18"
-                android:text="NOVA"
-                android:textColor="#FFFFFFFF"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
-                android:letterSpacing="0.16"
-                android:text="YOUR MEDIA"
-                android:textColor="#FF777777"
-                android:textSize="8sp" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="20dp"
-        android:layout_weight="1"
-        android:orientation="horizontal">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginEnd="12dp"
-            android:layout_weight="1"
-            android:background="@drawable/nova_setup_panel"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/stored_servers_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:text="@string/saved_servers"
-                android:textColor="#FFFFFFFF"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:visibility="gone"
-                tools:visibility="visible" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/stored_servers"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="12dp"
-                android:layout_weight="1"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                tools:itemCount="3" />
-
-            <TextView
-                android:id="@+id/welcome_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:text="@string/welcome_title"
-                android:textColor="#FFFFFFFF"
-                android:textSize="34sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/welcome_content"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="20dp"
-                android:fontFamily="sans-serif"
-                android:lineSpacingExtra="3dp"
-                android:text="@string/welcome_content"
-                android:textColor="#FFB3B3B3"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/enter_server_address"
-                style="@style/Nova.Setup.Button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/connect_manually_by_address" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:background="@drawable/nova_setup_panel"
-            android:orientation="vertical">
-
-            <androidx.compose.ui.platform.ComposeView
-                android:id="@+id/notifications"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:descendantFocusability="blocksDescendants"
-                android:focusable="false" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/discovery_title"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="@string/discovered_servers_title"
-                    android:textColor="#FFFFFFFF"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <ProgressBar
-                    android:id="@+id/discovery_progress_indicator"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp" />
-            </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/discovery_servers"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="12dp"
-                android:layout_weight="1"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                tools:itemCount="3" />
-
-            <TextView
-                android:id="@+id/discovery_none_found"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="24dp"
-                android:layout_weight="1"
-                android:gravity="top|center_horizontal"
-                android:text="@string/discovered_servers_empty"
-                android:textColor="#FF8F8F8F"
-                android:textSize="15sp"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/app_version"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:layout_marginTop="8dp"
-                android:fontFamily="sans-serif"
-                android:textColor="#FF666666"
-                android:textSize="11sp"
-                tools:text="NOVA version" />
-        </LinearLayout>
-    </LinearLayout>
-</LinearLayout>
-""", encoding="utf-8")
-
-# Manual server-address screen.
-(root / "app/src/main/res/layout/fragment_server_add.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/nova_setup_background"
-    android:paddingHorizontal="54dp"
-    android:paddingVertical="34dp">
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="560dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:background="@drawable/nova_setup_panel"
-        android:padding="28dp">
-
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:text="@string/lbl_enter_server_address"
-            android:textColor="#FFFFFFFF"
-            android:textSize="34sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/address_label"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:fontFamily="sans-serif"
-            android:text="@string/lbl_valid_server_address"
-            android:textColor="#FFAAAAAA"
-            android:textSize="15sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title" />
-
-        <EditText
-            android:id="@+id/address"
-            style="@style/Nova.Setup.Input"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginTop="12dp"
-            android:imeOptions="actionDone"
-            android:inputType="textUri"
-            android:nextFocusDown="@id/confirm"
-            android:nextFocusForward="@id/confirm"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/address_label" />
-
-        <Button
-            android:id="@+id/confirm"
-            style="@style/Nova.Setup.Button"
-            android:layout_width="180dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:text="@string/action_connect"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/address" />
-
-        <TextView
-            android:id="@+id/error"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:fontFamily="sans-serif"
-            android:textColor="#FFFF6B72"
-            android:textSize="13sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/confirm"
-            tools:text="@string/server_connecting" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</FrameLayout>
-""", encoding="utf-8")
-
-# Who's watching / user selector.
-(root / "app/src/main/res/layout/fragment_server.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/nova_setup_background"
-    android:clipChildren="false"
-    android:clipToPadding="false"
-    android:paddingStart="54dp"
-    android:paddingTop="26dp"
-    android:paddingEnd="54dp"
-    android:paddingBottom="30dp">
-
-    <TextView
-        android:id="@+id/notification"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="#FFB20710"
-        android:gravity="center"
-        android:padding="12dp"
-        android:text="@string/server_unsupported_notification"
-        android:textColor="#FFFFFFFF"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="gone" />
-
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="22dp"
-        android:fontFamily="sans-serif-medium"
-        android:gravity="center"
-        android:text="@string/who_is_watching"
-        android:textColor="#FFFFFFFF"
-        android:textSize="38sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/notification"
-        app:layout_goneMarginTop="0dp" />
-
-    <androidx.leanback.widget.HorizontalGridView
-        android:id="@+id/users"
-        android:layout_width="match_parent"
-        android:layout_height="174dp"
-        android:layout_marginTop="18dp"
-        android:clipChildren="false"
-        android:clipToPadding="false"
-        android:scrollbars="none"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/title"
-        app:rowHeight="174dp"
-        tools:itemCount="4" />
-
-    <TextView
-        android:id="@+id/no_users_warning"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fontFamily="sans-serif"
-        android:gravity="center"
-        android:text="@string/no_user_warning"
-        android:textColor="#FFAAAAAA"
-        app:layout_constraintBottom_toBottomOf="@id/users"
-        app:layout_constraintEnd_toEndOf="@id/actions_container"
-        app:layout_constraintStart_toStartOf="@id/actions_container"
-        app:layout_constraintTop_toTopOf="@id/users"
-        tools:visibility="invisible" />
-
-    <LinearLayout
-        android:id="@+id/actions_container"
-        android:layout_width="620dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="22dp"
-        android:gravity="center"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/users">
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/add_user_button"
-            style="@style/Nova.Setup.Button"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_margin="8dp"
-            android:drawableStart="@drawable/ic_user_add"
-            android:drawablePadding="8dp"
-            android:text="@string/add_user" />
-
-        <org.jellyfin.androidtv.ui.ServerButtonView
-            android:id="@+id/server_button"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_margin="8dp"
-            android:layout_weight="1"
-            android:padding="0dp" />
-    </LinearLayout>
-
-    <org.jellyfin.androidtv.ui.ExpandableTextView
-        android:id="@+id/login_disclaimer"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:fontFamily="sans-serif"
-        android:gravity="center"
-        android:maxLines="3"
-        android:padding="8dp"
-        android:textColor="#FF888888"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toEndOf="@id/actions_container"
-        app:layout_constraintStart_toStartOf="@id/actions_container"
-        app:layout_constraintTop_toBottomOf="@id/actions_container"
-        tools:text="Login disclaimer" />
-</androidx.constraintlayout.widget.ConstraintLayout>
-""", encoding="utf-8")
-
-# Login shell.
-(root / "app/src/main/res/layout/fragment_user_login.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/nova_setup_background">
-
-    <LinearLayout
-        android:id="@+id/login_panel"
-        android:layout_width="560dp"
-        android:layout_height="0dp"
-        android:background="@drawable/nova_setup_panel"
-        android:orientation="vertical"
-        android:padding="30dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:text="@string/lbl_sign_in"
-            android:textColor="#FFFFFFFF"
-            android:textSize="36sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/subtitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:fontFamily="sans-serif"
-            android:textColor="#FFAAAAAA"
-            android:textSize="15sp"
-            tools:text="@string/login_connect_to" />
-
-        <androidx.fragment.app.FragmentContainerView
-            android:id="@+id/login_method"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginTop="20dp"
-            android:layout_weight="1"
-            tools:name="org.jellyfin.androidtv.ui.startup.fragment.UserLoginCredentialsFragment" />
-
-        <LinearLayout
-            android:id="@+id/actions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
-                android:text="@string/login_other_options"
-                android:textColor="#FF8C8C8C"
-                android:textSize="12sp"
-                android:visibility="gone" />
-
-            <Button
-                android:id="@+id/use_credentials"
-                style="@style/Nova.Setup.Button"
-                android:layout_width="wrap_content"
-                android:layout_height="42dp"
-                android:layout_marginStart="8dp"
-                android:text="@string/action_use_password"
-                android:visibility="gone" />
-
-            <Button
-                android:id="@+id/use_quickconnect"
-                style="@style/Nova.Setup.Button"
-                android:layout_width="wrap_content"
-                android:layout_height="42dp"
-                android:layout_marginStart="8dp"
-                android:text="@string/action_use_quickconnect"
-                android:visibility="gone" />
-
-            <Button
-                android:id="@+id/cancel"
-                style="@style/Nova.Setup.Button"
-                android:layout_width="wrap_content"
-                android:layout_height="42dp"
-                android:layout_marginStart="8dp"
-                android:text="@string/btn_cancel"
-                tools:ignore="ButtonOrder" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="70dp"
-        android:layout_marginEnd="70dp"
-        android:gravity="center"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/login_panel"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <ImageView
-            android:layout_width="150dp"
-            android:layout_height="150dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/nova_mark" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.20"
-            android:text="NOVA"
-            android:textColor="#FFFFFFFF"
-            android:textSize="40sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="sans-serif"
-            android:letterSpacing="0.17"
-            android:text="YOUR MEDIA"
-            android:textColor="#FF8A8A8A"
-            android:textSize="11sp" />
-    </LinearLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
-""", encoding="utf-8")
-
-# Username/password form.
-(root / "app/src/main/res/layout/fragment_user_login_credentials.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <TextView
-        android:id="@+id/username_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-medium"
-        android:labelFor="@id/username"
-        android:text="@string/input_username"
-        android:textColor="#FFD0D0D0"
-        android:textSize="13sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <EditText
-        android:id="@+id/username"
-        style="@style/Nova.Setup.Input"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="7dp"
-        android:autofillHints="username"
-        android:imeOptions="actionNext"
-        android:inputType="text"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/username_label" />
-
-    <TextView
-        android:id="@+id/password_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:fontFamily="sans-serif-medium"
-        android:labelFor="@id/password"
-        android:text="@string/input_password"
-        android:textColor="#FFD0D0D0"
-        android:textSize="13sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/username" />
-
-    <EditText
-        android:id="@+id/password"
-        style="@style/Nova.Setup.Input"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="7dp"
-        android:autofillHints="password"
-        android:imeOptions="actionDone"
-        android:inputType="textPassword"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/password_label" />
-
-    <Button
-        android:id="@+id/confirm"
-        style="@style/Nova.Setup.Button"
-        android:layout_width="180dp"
-        android:layout_height="44dp"
-        android:layout_marginTop="18dp"
-        android:text="@string/action_login"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/password" />
-
-    <TextView
-        android:id="@+id/error"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="14dp"
-        android:fontFamily="sans-serif"
-        android:textColor="#FFFF6B72"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="@id/confirm"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/confirm"
-        app:layout_constraintTop_toTopOf="@id/confirm" />
-</androidx.constraintlayout.widget.ConstraintLayout>
-""", encoding="utf-8")
-
-# Quick Connect form.
-(root / "app/src/main/res/layout/fragment_user_login_quick_connect.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="sans-serif"
-        android:text="@string/login_quickconnect_step_1"
-        android:textColor="#FFC8C8C8"
-        android:textSize="14sp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:fontFamily="sans-serif"
-        android:text="@string/login_quickconnect_step_2"
-        android:textColor="#FFC8C8C8"
-        android:textSize="14sp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:fontFamily="sans-serif"
-        android:text="@string/login_quickconnect_step_3"
-        android:textColor="#FFC8C8C8"
-        android:textSize="14sp" />
-
-    <TextView
-        android:id="@+id/quick_connect_code"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
-        android:fontFamily="sans-serif-medium"
-        android:letterSpacing="0.12"
-        android:textColor="#FFE50914"
-        android:textDirection="ltr"
-        android:textSize="44sp"
-        android:textStyle="bold" />
-
-    <ProgressBar
-        android:id="@+id/loading"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:indeterminate="true" />
-
-    <TextView
-        android:id="@+id/error"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:fontFamily="sans-serif"
-        android:textColor="#FFFF6B72"
-        android:textSize="12sp" />
-</LinearLayout>
-""", encoding="utf-8")
-
-# NOVA uses username/password only. Keep the upstream Quick Connect class/layout
-# for compatibility, but never route users to it from the sign-in screen.
-user_login = root / "app/src/main/java/org/jellyfin/androidtv/ui/startup/fragment/UserLoginFragment.kt"
-ul = user_login.read_text(encoding="utf-8")
-old_initial_login = """		// Open initial fragment
-		if (skipQuickConnect) setLoginMethod<UserLoginCredentialsFragment>()
-		else setLoginMethod<UserLoginQuickConnectFragment>()"""
-new_initial_login = """		// NOVA supports username/password sign-in only.
-		setLoginMethod<UserLoginCredentialsFragment>()"""
-if old_initial_login not in ul:
-    raise RuntimeError("Could not find initial Quick Connect login routing")
-ul = ul.replace(old_initial_login, new_initial_login, 1)
-user_login.write_text(ul, encoding="utf-8")
 
 # NOVA wording on first-run strings.
 strings = root / "app/src/main/res/values/strings.xml"
 sv = strings.read_text(encoding="utf-8")
-sv = sv.replace(
-    '<string name="welcome_title">Welcome to Jellyfin</string>',
-    '<string name="welcome_title">Welcome to NOVA</string>'
-)
-sv = sv.replace(
-    '<string name="welcome_content">The Free Software Media System</string>',
-    '<string name="welcome_content">Your media universe, all in one place. Connect to your media server to begin.</string>'
-)
 sv = sv.replace(
     '1. Open the Jellyfin app on your phone or webbrowser, and sign in with your account',
     '1. Open your media server in a phone or web browser and sign in'
@@ -1002,10 +178,6 @@ if "import androidx.compose.ui.graphics.Color" not in sb:
         "import androidx.compose.ui.graphics.Shape\n",
         "import androidx.compose.ui.graphics.Color\nimport androidx.compose.ui.graphics.Shape\n"
     )
-old_button_call = """		ServerButton(
-			icon = {"""
-new_button_call = """		ServerButton(
-			icon = {"""
 # Add explicit NOVA colors at the callsite through the composable function.
 if "colors: ButtonColors = ButtonDefaults.colors()" not in sb:
     sb = sb.replace(
@@ -1117,33 +289,33 @@ text = gradle.read_text(encoding="utf-8")
 
 text = text.replace(
     'applicationId = namespace',
-    'applicationId = "app.nova.firetv"'
+    'applicationId = "app.nova.firetv.iptv"'
 )
 
 text = text.replace(
     'resValue("string", "app_id", namespace!!)',
-    'resValue("string", "app_id", "app.nova.firetv")'
+    'resValue("string", "app_id", "app.nova.firetv.iptv")'
 )
 text = text.replace(
     'resValue("string", "app_search_suggest_authority", "${namespace}.content")',
-    'resValue("string", "app_search_suggest_authority", "app.nova.firetv.content")'
+    'resValue("string", "app_search_suggest_authority", "app.nova.firetv.iptv.content")'
 )
 text = text.replace(
     'resValue("string", "app_search_suggest_intent_data", "content://${namespace}.content/intent")',
-    'resValue("string", "app_search_suggest_intent_data", "content://app.nova.firetv.content/intent")'
+    'resValue("string", "app_search_suggest_intent_data", "content://app.nova.firetv.iptv.content/intent")'
 )
 
 text = text.replace(
     'resValue("string", "app_id", namespace + applicationIdSuffix)',
-    'resValue("string", "app_id", "app.nova.firetv.debug")'
+    'resValue("string", "app_id", "app.nova.firetv.iptv.debug")'
 )
 text = text.replace(
     'resValue("string", "app_search_suggest_authority", "${namespace + applicationIdSuffix}.content")',
-    'resValue("string", "app_search_suggest_authority", "app.nova.firetv.debug.content")'
+    'resValue("string", "app_search_suggest_authority", "app.nova.firetv.iptv.debug.content")'
 )
 text = text.replace(
     'resValue("string", "app_search_suggest_intent_data", "content://${namespace + applicationIdSuffix}.content/intent")',
-    'resValue("string", "app_search_suggest_intent_data", "content://app.nova.firetv.debug.content/intent")'
+    'resValue("string", "app_search_suggest_intent_data", "content://app.nova.firetv.iptv.debug.content/intent")'
 )
 
 text = text.replace(
@@ -1196,22 +368,14 @@ for localized_strings in [
         localized_strings.write_text(localized_text, encoding="utf-8")
 
 # The custom Home/category rails still contain the previous NOVA wordmark.
-for branded_ui in [
-    root / "app/src/main/java/org/jellyfin/androidtv/ui/home/HomeFragment.kt",
-    root / "app/src/main/java/org/jellyfin/androidtv/ui/browsing/NovaSidebarHelper.kt",
-]:
-    if branded_ui.exists():
-        branded_text = branded_ui.read_text(encoding="utf-8")
-        branded_text = branded_text.replace('"NOVA"', '"NOVA"')
-        branded_ui.write_text(branded_text, encoding="utf-8")
 
 
 # Home-screen cinematic layout hooks.
 home_rows = root / "app/src/main/java/org/jellyfin/androidtv/ui/home/HomeRowsFragment.kt"
 h = home_rows.read_text(encoding="utf-8")
 
-# NOVA Home uses one simple row: 20 random movies. A new random set is
-# requested each time the Home screen is created.
+# NOVA uses a fixed Home order, with random movies first.
+# A new random set is requested each time the Home screen is created.
 old_sections = "val homesections = userSettingPreferences.activeHomesections"
 new_sections = """val homesections = emptyList<HomeSectionType>()"""
 if old_sections not in h:
@@ -1242,7 +406,7 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest""",
     1
 )
 
-# Add exactly one Home content row after Jellyfin has finished processing its
+# Add the NOVA Home content rows after Jellyfin has finished processing its
 # (now empty) configurable Home-section list.
 rows_anchor = """			// Add sections to layout
 			withContext(Dispatchers.Main) {"""
@@ -1260,6 +424,29 @@ random_row = """			val randomMovies = GetItemsRequest(
 					BrowseRowDef("Random Movies", randomMovies, 20)
 				)
 			)
+			val views = userViewsRepository.views.first()
+			val remainingViews = views.toMutableList()
+			fun takeView(name: String, type: org.jellyfin.sdk.model.api.CollectionType? = null) =
+				remainingViews.firstOrNull { it.name?.filter(Char::isLetterOrDigit).equals(name.filter(Char::isLetterOrDigit), ignoreCase = true) }
+					?.also { remainingViews.remove(it) }
+					?: type?.let { collectionType ->
+						remainingViews.firstOrNull {
+							it.collectionType == collectionType
+						}?.also { remainingViews.remove(it) }
+					}
+			val movies = takeView("Movies", org.jellyfin.sdk.model.api.CollectionType.MOVIES)
+			val indianMovies = takeView("Indian Movies")
+			val shows = takeView("TV Shows", org.jellyfin.sdk.model.api.CollectionType.TVSHOWS)
+			val prayers = takeView("Prayers")
+			val music = takeView("Music", org.jellyfin.sdk.model.api.CollectionType.MUSIC)
+			movies?.let { rows.add(helper.loadRecentlyAdded(listOf(it))) }
+			indianMovies?.let { rows.add(helper.loadRecentlyAdded(listOf(it))) }
+			shows?.let { rows.add(helper.loadRecentlyAdded(listOf(it))) }
+			rows.add(helper.loadResumeVideo())
+			prayers?.let { rows.add(helper.loadRecentlyAdded(listOf(it))) }
+			music?.let { rows.add(helper.loadRecentlyAdded(listOf(it))) }
+			// Preserve other libraries after the requested Home sections.
+			rows.add(helper.loadRecentlyAdded(remainingViews))
 
 			// Add sections to layout
 			withContext(Dispatchers.Main) {"""
@@ -1316,6 +503,56 @@ h = h.replace(resume_refresh, resume_stable, 1)
 field_anchor = """	private var justLoaded = true"""
 field_replacement = """	private var justLoaded = true
 
+	private var focusedRowPosition = 0
+	private val focusedCardPositions = mutableMapOf<Int, Int>()
+	private var selectionGeneration = 0
+	private var selectingCard = false
+	private var cardsNavigationEnabled = true
+
+	private fun leaveCards(destination: (() -> Unit)?) {
+		cardsNavigationEnabled = false
+		selectingCard = false
+		selectionGeneration++
+		verticalGridView?.let { grid ->
+			grid.stopScroll()
+			grid.descendantFocusability = android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
+			grid.isFocusable = false
+		}
+		destination?.invoke()
+	}
+
+	private fun selectCard(rowPosition: Int, cardPosition: Int) {
+		val row = adapter.get(rowPosition) as? ListRow ?: return
+		if (row.adapter.size() == 0) return
+		val position = cardPosition.coerceIn(0, row.adapter.size() - 1)
+		focusedRowPosition = rowPosition
+		focusedCardPositions[rowPosition] = position
+		selectingCard = true
+		val generation = ++selectionGeneration
+		val task = androidx.leanback.widget.ListRowPresenter.SelectItemViewHolderTask(position).apply {
+			isSmoothScroll = true
+			itemTask = object : Presenter.ViewHolderTask() {
+				override fun run(holder: Presenter.ViewHolder) {
+					if (!cardsNavigationEnabled || generation != selectionGeneration) return
+					selectingCard = false
+					holder.view.requestFocus()
+				}
+			}
+		}
+		setSelectedPosition(rowPosition, true, task)
+	}
+
+	fun requestCardFocus() {
+		if (view == null || verticalGridView == null || adapter.size() == 0) return
+		val row = focusedRowPosition.coerceIn(0, adapter.size() - 1)
+		val card = focusedCardPositions[row] ?: 0
+		cardsNavigationEnabled = true
+		verticalGridView.descendantFocusability = android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
+		verticalGridView.isFocusable = true
+		verticalGridView.requestFocus()
+		selectCard(row, card)
+	}
+
 	var onNavigateToSidebar: (() -> Unit)? = null"""
 if field_anchor not in h:
     raise RuntimeError("Could not find HomeRowsFragment callback anchor")
@@ -1325,25 +562,55 @@ key_anchor = """	override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): B
 key_replacement = """	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
 
-		verticalGridView.setOnKeyInterceptListener { event ->
-			if (
-				event.action == KeyEvent.ACTION_DOWN &&
-				event.keyCode == KeyEvent.KEYCODE_DPAD_LEFT &&
-				event.repeatCount == 0
-			) {
-				val item = currentItem
-				val itemIndex = if (item != null) (currentRow?.adapter as? ItemRowAdapter)?.indexOf(item) ?: -1 else -1
+		verticalGridView.setOnKeyInterceptListener(::handleNavigation)
+	}
 
-				if (itemIndex == 0) {
-					onNavigateToSidebar?.invoke()
-					true
-				} else {
-					false
+	fun handleNavigation(event: KeyEvent): Boolean {
+		// Keys can still arrive while the page closes; the rows are gone by then.
+		if (view == null || verticalGridView == null) return false
+		if (!cardsNavigationEnabled) return false
+		val direction = event.keyCode in setOf(
+			KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+			KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
+		)
+		if (!direction) return false
+		if (event.action != KeyEvent.ACTION_DOWN) return true
+		if (adapter.size() == 0) return true
+		var rowPosition = focusedRowPosition.coerceIn(0, adapter.size() - 1)
+		var row = adapter.get(rowPosition) as? ListRow
+		if (row == null || row.adapter.size() == 0) {
+			rowPosition = (0 until adapter.size()).firstOrNull {
+				val candidate = adapter.get(it) as? ListRow
+				candidate != null && candidate.adapter.size() > 0
+			} ?: return true
+			row = adapter.get(rowPosition) as ListRow
+		}
+		val cardPosition = (focusedCardPositions[rowPosition] ?: 0).coerceIn(0, row.adapter.size() - 1)
+		focusedRowPosition = rowPosition
+		focusedCardPositions[rowPosition] = cardPosition
+		when (event.keyCode) {
+			KeyEvent.KEYCODE_DPAD_LEFT -> {
+				if (cardPosition == 0) {
+					leaveCards(onNavigateToSidebar)
 				}
-			} else {
-				false
+				else selectCard(rowPosition, cardPosition - 1)
+			}
+			KeyEvent.KEYCODE_DPAD_RIGHT -> {
+				if (cardPosition < row.adapter.size() - 1) selectCard(rowPosition, cardPosition + 1)
+			}
+			KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+				val step = if (event.keyCode == KeyEvent.KEYCODE_DPAD_UP) -1 else 1
+				var target = rowPosition + step
+				while (target in 0 until adapter.size()) {
+					val next = adapter.get(target) as? ListRow
+					if (next != null && next.adapter.size() > 0) break
+					target += step
+				}
+				if (target in 0 until adapter.size()) selectCard(target, focusedCardPositions[target] ?: cardPosition)
+
 			}
 		}
+		return true
 	}
 
 	override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {"""
@@ -1365,21 +632,14 @@ h = h.replace(
 old_presenter = "val cardPresenter = CardPresenter()"
 if old_presenter not in h:
     raise RuntimeError("Could not find home CardPresenter() hook")
-h = h.replace(old_presenter, "val cardPresenter = CardPresenter(false, ImageType.POSTER, 190)", 1)
-
-old_clear = """if (item !is BaseRowItem) {
-				currentItem = null
-				//fill in default background"""
-new_clear = """if (item !is BaseRowItem) {
-				currentItem = null
-				HomeHeroStateStore.clear()
-				//fill in default background"""
-if old_clear not in h:
-    raise RuntimeError("Could not find hero clear hook")
-h = h.replace(old_clear, new_clear, 1)
+h = h.replace(old_presenter, "val cardPresenter = CardPresenter(false, ImageType.POSTER, 158)", 1)
 
 old_background = """				backgroundService.setBackground(item.baseItem)"""
-new_background = """				HomeHeroStateStore.update(item.baseItem)
+new_background = """				if (!selectingCard && cardsNavigationEnabled) {
+					focusedRowPosition = selectedPosition.coerceAtLeast(0)
+					focusedCardPositions[focusedRowPosition] = itemRowAdapter?.indexOf(item)?.coerceAtLeast(0) ?: 0
+				}
+				HomeHeroStateStore.update(item.baseItem)
 				backgroundService.setBackground(item.baseItem)"""
 if old_background not in h:
     raise RuntimeError("Could not find hero update hook")
@@ -1389,7 +649,6 @@ h = h.replace(old_background, new_background, 1)
 # Avoid the old unchecked row cast so normal D-pad browsing cannot crash Home.
 unsafe_home_selection = """			if (item !is BaseRowItem) {
 				currentItem = null
-				HomeHeroStateStore.clear()
 				//fill in default background
 				backgroundService.clearBackgrounds()
 			} else {
@@ -1398,7 +657,6 @@ unsafe_home_selection = """			if (item !is BaseRowItem) {
 safe_home_selection = """			if (item !is BaseRowItem || row !is ListRow) {
 				currentItem = null
 				currentRow = null
-				HomeHeroStateStore.clear()
 				//fill in default background
 				backgroundService.clearBackgrounds()
 			} else {
@@ -1780,7 +1038,7 @@ if destroy_view not in e:
 e = e.replace(destroy_view, destroy_view_new, 1)
 
 card_presenter = """        mCardPresenter = new CardPresenter(false, 140);"""
-card_presenter_new = """        mCardPresenter = new CardPresenter(false, ImageType.POSTER, 190);
+card_presenter_new = """        mCardPresenter = new CardPresenter(false, ImageType.POSTER, 158);
         mCardPresenter.setUniformAspect(true);"""
 if card_presenter not in e:
     raise RuntimeError("Could not find EnhancedBrowseFragment card presenter")
@@ -2011,7 +1269,11 @@ old_series_route = """                    case SERIES:
                         navigationRepository.getValue().navigate(Destinations.INSTANCE.itemDetails(baseItem.getId()));
                         return;"""
 new_series_route = """                    case SERIES:
-                        navigationRepository.getValue().navigate(Destinations.INSTANCE.novaSeries(baseItem));
+                        if (rowItem.getSelectAction() == BaseRowItemSelectAction.Play) {
+                            playbackHelper.getValue().retrieveAndPlay(baseItem.getId(), false, null, context);
+                        } else {
+                            navigationRepository.getValue().navigate(Destinations.INSTANCE.novaSeries(baseItem));
+                        }
                         return;
                     case MOVIE:
                     case VIDEO:
@@ -2029,7 +1291,11 @@ new_series_route = """                    case SERIES:
                         return;
                     case MUSIC_ALBUM:
                     case PLAYLIST:
-                        navigationRepository.getValue().navigate(Destinations.INSTANCE.novaItem(baseItem));
+                        if (rowItem.getSelectAction() == BaseRowItemSelectAction.Play) {
+                            playbackHelper.getValue().retrieveAndPlay(baseItem.getId(), false, null, context);
+                        } else {
+                            navigationRepository.getValue().navigate(Destinations.INSTANCE.novaItem(baseItem));
+                        }
                         return;
                     case MUSIC_ARTIST:
                         navigationRepository.getValue().navigate(Destinations.INSTANCE.itemDetails(baseItem.getId()));
@@ -2064,11 +1330,24 @@ episode_direct_play = """                    case EPISODE:
                         return;
 
                     case SEASON:
-                        navigationRepository.getValue().navigate(Destinations.INSTANCE.folderBrowser(baseItem));
+                        // NOVA's own season page (episode list), not Jellyfin's folder screen.
+                        navigationRepository.getValue().navigate(Destinations.INSTANCE.novaItem(baseItem));
                         return;"""
 if episode_anchor not in i:
     raise RuntimeError("Could not find Season ItemLauncher route for direct episode playback")
 i = i.replace(episode_anchor, episode_direct_play, 1)
+
+audio_play_anchor = """                    case AUDIO:
+                        if (rowItem.getBaseItem() == null)"""
+audio_play_nova = """                    case AUDIO:
+                        if (rowItem.getSelectAction() == BaseRowItemSelectAction.Play) {
+                            playbackHelper.getValue().retrieveAndPlay(baseItem.getId(), false, null, context);
+                            return;
+                        }
+                        if (rowItem.getBaseItem() == null)"""
+if i.count(audio_play_anchor) != 1:
+    raise RuntimeError("Could not find ItemLauncher audio play route")
+i = i.replace(audio_play_anchor, audio_play_nova, 1)
 
 item_launcher.write_text(i, encoding="utf-8")
 
@@ -2104,8 +1383,6 @@ if color_scheme.exists():
     cs = cs.replace("onButtonFocused = Color(0xFF444444)", "onButtonFocused = Color(0xFFFFFFFF)")
     cs = cs.replace("inputFocused = Color(0xE6CCCCCC)", "inputFocused = Color(0xFFE50914)")
     cs = cs.replace("onInputFocused = Color(0xFFDDDDDD)", "onInputFocused = Color(0xFFFFFFFF)")
-    # Newer theme variants also expose list focus separately.
-    cs = cs.replace("listButtonFocused = Tokens.Color.colorBluegrey800", "listButtonFocused = Color(0xFFE50914)")
     color_scheme.write_text(cs, encoding="utf-8")
 
 # Jellyfin Android TV v0.19.10 uses CardPresenter.java. Patch that exact
@@ -2162,7 +1439,8 @@ if legacy_card_presenter.exists():
             holder.mCardView.setOverlayInfo(rowItem);
         }
         holder.mCardView.showFavIcon(rowItem.isFavorite());"""
-    overlay_nova = """        if (mShowOverlays && ImageType.POSTER.equals(mImageType)) {
+    overlay_nova = """        holder.mCardView.clearOverlayInfo();
+        if (mShowInfo && mShowOverlays && ImageType.POSTER.equals(mImageType)) {
             holder.mCardView.setOverlayInfo(rowItem);
         }
         holder.mCardView.showFavIcon(mShowOverlays && rowItem.isFavorite());"""
@@ -2191,6 +1469,12 @@ if legacy_card_presenter.exists():
         raise RuntimeError("Could not find v0.19.10 CardPresenter focus hook")
     cpj = cpj.replace(focus_anchor, focus_nova, 1)
 
+    reset_anchor = """            mCardView.clearBanner();"""
+    if cpj.count(reset_anchor) != 1:
+        raise RuntimeError("Could not find CardPresenter recycled-card reset")
+    cpj = cpj.replace(reset_anchor, """            mCardView.clearOverlayInfo();
+            mCardView.clearBanner();""", 1)
+
     legacy_card_presenter.write_text(cpj, encoding="utf-8")
 
 
@@ -2198,6 +1482,25 @@ if legacy_card_presenter.exists():
 # a normal OnFocusChangeListener after the presenter creates the card, so draw
 # the NOVA focus frame inside the view's own onFocusChanged() callback instead.
 legacy_image_card = root / "app/src/main/java/org/jellyfin/androidtv/ui/card/LegacyImageCardView.java"
+card_text = legacy_image_card.read_text(encoding="utf-8")
+clear_overlay_anchor = """    public void setOverlayInfo(BaseRowItem item) {
+        if (binding.overlayText == null) return;"""
+clear_overlay_nova = """    public void clearOverlayInfo() {
+        binding.nameOverlay.setVisibility(GONE);
+        binding.overlayText.setText(null);
+        binding.overlayCount.setText(null);
+        binding.icon.setVisibility(GONE);
+        binding.iconImage.setImageDrawable(null);
+    }
+
+    public void setOverlayInfo(BaseRowItem item) {
+        clearOverlayInfo();
+        if (binding.overlayText == null) return;"""
+if card_text.count(clear_overlay_anchor) != 1:
+    raise RuntimeError("Could not find LegacyImageCardView name-overlay hook")
+card_text = card_text.replace(clear_overlay_anchor, clear_overlay_nova, 1)
+legacy_image_card.write_text(card_text, encoding="utf-8")
+
 if legacy_image_card.exists():
     lic = legacy_image_card.read_text(encoding="utf-8")
 
@@ -2665,4 +1968,588 @@ if log_initializer.exists():
     log_initializer.write_text(li, encoding="utf-8")
 
 
+
+# ---------------------------------------------------------------------------
+
+# Galaxy-N branding for launcher, round icon, search integration and splash.
+manifest = root / "app/src/main/AndroidManifest.xml"
+m = manifest.read_text(encoding="utf-8")
+m = m.replace('android:icon="@mipmap/app_icon"', 'android:icon="@drawable/nova_galaxy_icon"')
+manifest.write_text(m, encoding="utf-8")
+
+searchable = root / "app/src/main/res/xml/searchable.xml"
+if searchable.exists():
+    q = searchable.read_text(encoding="utf-8")
+    q = q.replace('android:icon="@mipmap/app_icon"', 'android:icon="@drawable/nova_galaxy_icon"')
+    searchable.write_text(q, encoding="utf-8")
+
+splash_file = root / "app/src/main/java/org/jellyfin/androidtv/ui/startup/fragment/SplashFragment.kt"
+if splash_file.exists():
+    q = splash_file.read_text(encoding="utf-8")
+    q = q.replace("R.drawable.nova_mark", "R.drawable.nova_galaxy_icon")
+    splash_file.write_text(q, encoding="utf-8")
+
+
+
+
+# ---------------------------------------------------------------------------
+# NOVA rebuilt full-screen setup flow
+# ---------------------------------------------------------------------------
+# The earlier concept PNG is now treated as design reference only. The setup
+# pages themselves are real Android controls/layouts so there is no stock
+# Jellyfin dialog sitting over baked UI artwork.
+
+(drawable_dir / "nova_setup_page_background.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:startColor="#050507"
+        android:centerColor="#0A0A0F"
+        android:endColor="#16070B" />
+</shape>
+""", encoding="utf-8")
+
+(drawable_dir / "nova_setup_panel_strong.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#E615151B" />
+    <corners android:radius="18dp" />
+    <stroke android:width="1dp" android:color="#554A4A55" />
+    <padding android:left="26dp" android:top="24dp" android:right="26dp" android:bottom="24dp" />
+</shape>
+""", encoding="utf-8")
+
+(drawable_dir / "nova_setup_field.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF252532" />
+            <corners android:radius="12dp" />
+            <stroke android:width="3dp" android:color="#FFFFFFFF" />
+            <padding android:left="18dp" android:top="11dp" android:right="18dp" android:bottom="11dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#F0181820" />
+            <corners android:radius="12dp" />
+            <stroke android:width="1dp" android:color="#FF52525F" />
+            <padding android:left="18dp" android:top="11dp" android:right="18dp" android:bottom="11dp" />
+        </shape>
+    </item>
+</selector>
+""", encoding="utf-8")
+
+
+(drawable_dir / "nova_setup_action_red.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="#55380A0D" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFF1621" />
+            <corners android:radius="12dp" />
+            <stroke android:width="3dp" android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="0" android:startColor="#FFB20710" android:endColor="#FFE50914" />
+            <corners android:radius="12dp" />
+            <stroke android:width="1dp" android:color="#FFFF5B64" />
+        </shape>
+    </item>
+</selector>
+""", encoding="utf-8")
+
+# MAIN SERVER SELECTION -------------------------------------------------------
+
+# MANUAL SERVER ADDRESS -------------------------------------------------------
+(root / "app/src/main/res/layout/fragment_server_add.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/nova_setup_page_background">
+
+    <ImageView
+        android:layout_width="500dp"
+        android:layout_height="500dp"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="-70dp"
+        android:alpha="0.42"
+        android:contentDescription="@null"
+        android:src="@drawable/nova_galaxy_icon" />
+
+    <LinearLayout
+        android:layout_width="680dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginStart="72dp"
+        android:background="@drawable/nova_setup_panel_strong"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="Connect your media server"
+            android:textColor="#FFFFFFFF"
+            android:textSize="38sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/address_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="sans-serif"
+            android:text="Enter the Jellyfin server address, including http:// or https://"
+            android:textColor="#FFB6B6BE"
+            android:textSize="15sp" />
+
+        <EditText
+            android:id="@+id/address"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/nova_setup_field"
+            android:fontFamily="sans-serif"
+            android:hint="http://192.168.1.100:8096"
+            android:imeOptions="actionDone"
+            android:inputType="textUri"
+            android:nextFocusDown="@id/confirm"
+            android:nextFocusForward="@id/confirm"
+            android:singleLine="true"
+            android:textColor="#FFFFFFFF"
+            android:textColorHint="#FF80808A"
+            android:textSize="17sp" />
+
+        <Button
+            android:id="@+id/confirm"
+            android:layout_width="260dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/nova_setup_action_red"
+            android:fontFamily="sans-serif-medium"
+            android:text="Connect"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFFFF"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="sans-serif"
+            android:textColor="#FFFF747C"
+            android:textSize="13sp"
+            tools:text="Connecting..." />
+    </LinearLayout>
+</FrameLayout>
+""", encoding="utf-8")
+
+# WHO'S WATCHING --------------------------------------------------------------
+
+# Remove the legacy startup toolbar from first-run pages so setup truly owns
+# the whole screen.
+startup_activity = root / "app/src/main/java/org/jellyfin/androidtv/ui/startup/StartupActivity.kt"
+if startup_activity.exists():
+    q = startup_activity.read_text(encoding="utf-8")
+    q = q.replace(
+        """\tprivate fun showServer(id: UUID) = supportFragmentManager.commit {
+\t\treplace<StartupToolbarFragment>(R.id.content_view)
+\t\tadd<ServerFragment>(
+\t\t\tR.id.content_view, null, bundleOf(
+\t\t\t\tServerFragment.ARG_SERVER_ID to id.toString()
+\t\t\t)
+\t\t)
+\t}
+
+\tprivate fun showServerSelection() = supportFragmentManager.commit {
+\t\treplace<StartupToolbarFragment>(R.id.content_view)
+\t\tadd<SelectServerFragment>(R.id.content_view)
+\t}
+""",
+        """\tprivate fun showServer(id: UUID) = supportFragmentManager.commit {
+\t\treplace<ServerFragment>(
+\t\t\tR.id.content_view, null, bundleOf(
+\t\t\t\tServerFragment.ARG_SERVER_ID to id.toString()
+\t\t\t)
+\t\t)
+\t}
+
+\tprivate fun showServerSelection() = supportFragmentManager.commit {
+\t\treplace<SelectServerFragment>(R.id.content_view)
+\t}
+"""
+    )
+    startup_activity.write_text(q, encoding="utf-8")
+
+# Remove toolbar insertion when moving from server discovery to a server page.
+
+# All setup navigation is now full-screen; keepToolbar remains in the function
+# signature for compatibility but no longer inserts the old Jellyfin toolbar.
+server_fragment = root / "app/src/main/java/org/jellyfin/androidtv/ui/startup/fragment/ServerFragment.kt"
+if server_fragment.exists():
+    q = server_fragment.read_text(encoding="utf-8")
+    old_nav = """\t\trequireActivity()
+\t\t\t.supportFragmentManager
+\t\t\t.commit {
+\t\t\t\tif (keepToolbar) {
+\t\t\t\t\treplace<StartupToolbarFragment>(R.id.content_view)
+\t\t\t\t\tadd<F>(R.id.content_view, null, args)
+\t\t\t\t} else {
+\t\t\t\t\treplace<F>(R.id.content_view, null, args)
+\t\t\t\t}
+
+\t\t\t\tif (keepHistory) addToBackStack(null)
+\t\t\t}
+"""
+    new_nav = """\t\trequireActivity()
+\t\t\t.supportFragmentManager
+\t\t\t.commit {
+\t\t\t\treplace<F>(R.id.content_view, null, args)
+\t\t\t\tif (keepHistory) addToBackStack(null)
+\t\t\t}
+"""
+    if old_nav in q:
+        q = q.replace(old_nav, new_nav, 1)
+    server_fragment.write_text(q, encoding="utf-8")
+
+
+
+# ---------------------------------------------------------------------------
+# NOVA main setup screen — true from-scratch rebuild
+# ---------------------------------------------------------------------------
+# This final override deliberately does not use the generated setup mockup as a
+# background. It recreates the screen using real Android controls, with the
+# uploaded galaxy-N used only as branding/decorative artwork.
+
+
+
+# ---------------------------------------------------------------------------
+# NOVA setup polish pass — fix profile/login visual overlap
+# ---------------------------------------------------------------------------
+
+# WHO'S WATCHING: no giant cropped logo behind the title; use a clean branded
+# header, centered profile area, and properly sized action row.
+
+
+# ---------------------------------------------------------------------------
+# NOVA connect screen — code the concept as real UI, not a screenshot background
+# ---------------------------------------------------------------------------
+
+# Purpose-built vectors for the three live controls.
+(drawable_dir / "nova_ic_server.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp" android:height="28dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M4,3h16a2,2 0,0 1,2 2v3a2,2 0,0 1,-2 2H4A2,2 0,0 1,2 8V5a2,2 0,0 1,2 -2M5,5v3h14V5H5m-1,7h16a2,2 0,0 1,2 2v3a2,2 0,0 1,-2 2H4a2,2 0,0 1,-2 -2v-3a2,2 0,0 1,2 -2m1,2v3h14v-3H5M7,6.5a1,1 0,1 0,0.01 0M7,15.5a1,1 0,1 0,0.01 0"/>
+</vector>
+""", encoding="utf-8")
+
+
+(drawable_dir / "nova_ic_gear.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp" android:height="30dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M19.14,12.94a7.3,7.3 0,0 0,0.05 -0.94,7.3 7.3,0 0,0 -0.07,-1l2.03,-1.58 -2,-3.46 -2.47,1a7.1,7.1 0,0 0,-1.63 -0.95L14.7,3.36h-4L10.32,6a7,7 0,0 0,-1.65 0.96l-2.45,-1 -2,3.46L6.27,11a7,7 0,0 0,-0.07 1,7 7,0 0,0 0.07,1l-2.05,1.58 2,3.46 2.45,-1a7,7 0,0 0,1.65 0.96l0.38,2.64h4l0.37,-2.64a7.1,7.1 0,0 0,1.63 -0.95l2.47,1 2,-3.46 -2.03,-1.65M12.7,15.5A3.5,3.5 0,1 1,12.7 8a3.5,3.5 0,0 1,0 7.5"/>
+</vector>
+""", encoding="utf-8")
+
+(drawable_dir / "nova_ic_link.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp" android:height="30dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M10.59,13.41a2,2 0,0 1,0 -2.82l2.83,-2.83a2,2 0,0 1,2.82 2.83l-1.41,1.41 1.41,1.41 1.42,-1.41a4,4 0,0 0,-5.66 -5.66l-2.83,2.83a4,4 0,0 0,0 5.66l1.42,-1.42m2.82,-2.82 -1.42,1.42a2,2 0,0 1,0 2.82l-2.83,2.83a2,2 0,1 1,-2.82 -2.83L8.3,12.4 6.88,11l-1.41,1.41a4,4 0,1 0,5.66 5.66l2.83,-2.83a4,4 0,0 0,0 -5.66l-1.42,1.01z"/>
+</vector>
+""", encoding="utf-8")
+
+(drawable_dir / "nova_concept_input.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#E418181D" />
+            <corners android:radius="13dp" />
+            <stroke android:width="3dp" android:color="#FFFF4E5B" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#E418181D" />
+            <corners android:radius="13dp" />
+            <stroke android:width="2dp" android:color="#FFE44752" />
+        </shape>
+    </item>
+</selector>
+""", encoding="utf-8")
+
+(drawable_dir / "nova_concept_card.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#F126262D" />
+            <corners android:radius="13dp" />
+            <stroke android:width="3dp" android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#E818181D" />
+            <corners android:radius="13dp" />
+            <stroke android:width="1dp" android:color="#FF4B4B53" />
+        </shape>
+    </item>
+</selector>
+""", encoding="utf-8")
+
+(drawable_dir / "nova_concept_connect.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <gradient android:angle="0" android:startColor="#FFFF2433" android:endColor="#FFB80712" />
+            <corners android:radius="13dp" />
+            <stroke android:width="3dp" android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="0" android:startColor="#FFE51A27" android:endColor="#FF9F0610" />
+            <corners android:radius="13dp" />
+            <stroke android:width="1dp" android:color="#FFFF4C58" />
+        </shape>
+    </item>
+</selector>
+""", encoding="utf-8")
+
+# Real Android UI matching the supplied concept. The concept image itself is
+# NOT displayed as a background.
+
+# Matching real behavior for the three concept controls.
+select_server = root / "app/src/main/java/org/jellyfin/androidtv/ui/startup/fragment/SelectServerFragment.kt"
+select_server.write_text("""package org.jellyfin.androidtv.ui.startup.fragment
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.commit
+import androidx.fragment.app.replace
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import org.jellyfin.androidtv.R
+import org.jellyfin.androidtv.auth.model.ConnectedState
+import org.jellyfin.androidtv.auth.model.ConnectingState
+import org.jellyfin.androidtv.auth.model.Server
+import org.jellyfin.androidtv.auth.model.UnableToConnectState
+import org.jellyfin.androidtv.databinding.FragmentSelectServerBinding
+import org.jellyfin.androidtv.ui.startup.StartupViewModel
+import org.jellyfin.androidtv.util.getSummary
+import org.koin.androidx.viewmodel.ext.android.activityViewModel
+
+class SelectServerFragment : Fragment() {
+    private var _binding: FragmentSelectServerBinding? = null
+    private val binding get() = _binding!!
+    private val startupViewModel: StartupViewModel by activityViewModel()
+
+    private var storedServers: List<Server> = emptyList()
+    private var discoveredServers: List<Server> = emptyList()
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
+        _binding = FragmentSelectServerBinding.inflate(inflater, container, false)
+
+        binding.serverAddress.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                connectEnteredAddress(quickConnect = false)
+                true
+            } else false
+        }
+
+        binding.connect.setOnClickListener {
+            connectEnteredAddress(quickConnect = false)
+        }
+
+        binding.quickConnect.setOnClickListener {
+            connectEnteredAddress(quickConnect = true)
+        }
+
+        binding.manualSetup.setOnClickListener {
+            parentFragmentManager.commit {
+                replace<ServerAddFragment>(R.id.content_view)
+                addToBackStack(null)
+            }
+        }
+
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                startupViewModel.storedServers.onEach { servers ->
+                    storedServers = servers
+                    suggestServerAddress()
+                }.launchIn(this)
+
+                startupViewModel.discoveredServers.onEach { servers ->
+                    discoveredServers = servers
+                    suggestServerAddress()
+                }.launchIn(this)
+            }
+        }
+
+        startupViewModel.reloadStoredServers()
+        startupViewModel.loadDiscoveryServers()
+
+        binding.serverAddress.requestFocus()
+    }
+
+    private fun suggestServerAddress() {
+        if (binding.serverAddress.text?.isNotBlank() == true) return
+
+        val address = storedServers.firstOrNull()?.address
+            ?: discoveredServers.firstOrNull()?.address
+            ?: return
+
+        binding.serverAddress.setText(address)
+        binding.serverAddress.setSelection(address.length)
+    }
+
+    private fun connectEnteredAddress(quickConnect: Boolean) {
+        val address = binding.serverAddress.text?.toString()?.trim().orEmpty()
+        if (address.isBlank()) {
+            showStatus("Enter your server address first.")
+            binding.serverAddress.requestFocus()
+            return
+        }
+
+        binding.connect.isEnabled = false
+        binding.quickConnect.isEnabled = false
+        showStatus("Connecting…")
+
+        startupViewModel.addServer(address)
+            .onEach { state ->
+                when (state) {
+                    is ConnectingState -> showStatus("Connecting to __DOLLAR__{state.address}…")
+
+                    is ConnectedState -> {
+                        binding.connect.isEnabled = true
+                        binding.quickConnect.isEnabled = true
+                        binding.connectionStatus.isVisible = false
+
+                        if (quickConnect) {
+                            parentFragmentManager.commit {
+                                replace<UserLoginFragment>(
+                                    R.id.content_view,
+                                    null,
+                                    bundleOf(
+                                        UserLoginFragment.ARG_SERVER_ID to state.id.toString(),
+                                        UserLoginFragment.ARG_USERNAME to null,
+                                        UserLoginFragment.ARG_SKIP_QUICKCONNECT to false,
+                                    )
+                                )
+                                addToBackStack(null)
+                            }
+                        } else {
+                            parentFragmentManager.commit {
+                                replace<ServerFragment>(
+                                    R.id.content_view,
+                                    null,
+                                    bundleOf(ServerFragment.ARG_SERVER_ID to state.id.toString())
+                                )
+                            }
+                        }
+                    }
+
+                    is UnableToConnectState -> {
+                        binding.connect.isEnabled = true
+                        binding.quickConnect.isEnabled = true
+
+                        val details = state.addressCandidates
+                            .map { "__DOLLAR__{it.key} - __DOLLAR__{it.value.getSummary(requireContext())}" }
+                            .joinToString(separator = "\\n")
+
+                        showStatus(
+                            if (details.isBlank()) "Could not connect to the server."
+                            else "Could not connect.\\n__DOLLAR__details"
+                        )
+                    }
+                }
+            }
+            .launchIn(viewLifecycleOwner.lifecycleScope)
+    }
+
+    private fun showStatus(message: String) {
+        binding.connectionStatus.text = message
+        binding.connectionStatus.isVisible = true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        startupViewModel.reloadStoredServers()
+        startupViewModel.loadDiscoveryServers()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}
+""".replace("__DOLLAR__", "$"), encoding="utf-8")
+
+
 print("Applied NOVA branding, Home UI, cinematic library pages, direct playback and global red focus cursor.")
+
+# Consistent remote cadence across browsing, setup, preferences and IPTV.
+for relative in [
+    "ui/browsing/MainActivity.kt",
+    "ui/startup/StartupActivity.kt",
+    "ui/preference/PreferencesActivity.kt",
+    "ui/playback/ExternalPlayerActivity.kt",
+    "ui/iptv/NovaIptvActivity.kt",
+]:
+    activity_path = root / "app/src/main/java/org/jellyfin/androidtv" / relative
+    activity_source = activity_path.read_text(encoding="utf-8")
+    import re
+    class_match = re.search(r"^class \w+[^\n]*\{", activity_source, re.MULTILINE)
+    if not class_match:
+        raise RuntimeError(f"Could not find activity declaration: {relative}")
+    original_dispatch = "override fun dispatchKeyEvent(event: KeyEvent): Boolean"
+    has_dispatch = original_dispatch in activity_source
+    if has_dispatch:
+        activity_source = activity_source.replace(original_dispatch, "private fun dispatchNovaKeyEvent(event: KeyEvent): Boolean", 1)
+    methods = """
+    private val novaDpad by lazy {
+        org.jellyfin.androidtv.ui.navigation.NovaDpadDispatcher(this, ::dispatchNovaKeyEvent)
+    }
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean = novaDpad.dispatch(event)
+"""
+    if not has_dispatch:
+        methods += """    private fun dispatchNovaKeyEvent(event: android.view.KeyEvent): Boolean = super.dispatchKeyEvent(event)
+"""
+    activity_source = activity_source[:class_match.end()] + methods + activity_source[class_match.end():]
+    activity_path.write_text(activity_source, encoding="utf-8")

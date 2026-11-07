@@ -2,21 +2,26 @@ package org.jellyfin.androidtv.ui.home
 
 import android.content.Context
 import android.os.SystemClock
-import android.widget.ImageView
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.media3.datasource.HttpDataSource
 import androidx.lifecycle.Lifecycle
@@ -27,20 +32,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.jellyfin.androidtv.data.repository.ItemRepository
 import org.jellyfin.androidtv.preference.UserPreferences
-import org.jellyfin.androidtv.ui.composable.AsyncImage
+import org.jellyfin.androidtv.ui.browsing.NovaSeerr
 import org.jellyfin.androidtv.ui.playback.rewrite.RewriteMediaManager
 import org.jellyfin.androidtv.util.PlaybackHelper
 import org.jellyfin.androidtv.util.apiclient.Response
 import org.jellyfin.androidtv.util.apiclient.getUrl
-import org.jellyfin.androidtv.util.apiclient.itemBackdropImages
-import org.jellyfin.androidtv.util.apiclient.parentBackdropImages
 import org.jellyfin.androidtv.util.profile.createDeviceProfile
 import org.jellyfin.androidtv.ui.player.base.PlayerSurface
 import org.jellyfin.playback.core.PlaybackManager
@@ -71,14 +75,20 @@ data class HomePreview(
 	val item: BaseItemDto,
 	val playableItem: BaseItemDto,
 	val startPositionMs: Long,
+	/** Discover titles: play this YouTube trailer instead of JellyBridge's placeholder video. */
+	val trailerKey: String? = null,
 )
 
 object HomePreviewPlaybackController {
+	private val suspendedState = MutableStateFlow(false)
+	val suspended = suspendedState.asStateFlow()
+
 	@Volatile
 	private var activeManager: PlaybackManager? = null
 
 	fun attach(manager: PlaybackManager) {
 		activeManager = manager
+		suspendedState.value = false
 	}
 
 	fun detach(manager: PlaybackManager) {
@@ -86,10 +96,17 @@ object HomePreviewPlaybackController {
 	}
 
 	fun stopActivePreview() {
+		// Cancel pending preview startup as well as the currently audible player.
+		// Otherwise an API response can restart it during full-player navigation.
+		suspendedState.value = true
 		activeManager?.let { manager ->
 			runCatching { manager.state.stop() }
 			runCatching { manager.queue.clear() }
 		}
+	}
+
+	fun resumePreview(manager: PlaybackManager) {
+		if (activeManager === manager) suspendedState.value = false
 	}
 }
 
@@ -146,7 +163,6 @@ private suspend fun refreshPlayableItem(
 private suspend fun resolveWithJellyfinPlaybackHelper(
 	context: Context,
 	playbackHelper: PlaybackHelper,
-	api: ApiClient,
 	selectedItem: BaseItemDto,
 ): BaseItemDto? = suspendCancellableCoroutine { continuation ->
 	playbackHelper.getItemsToPlay(
@@ -229,7 +245,7 @@ private suspend fun getPlayablePreviewItem(
 						sortBy = listOf(ItemSortBy.RANDOM),
 						limit = 50,
 						fields = ItemRepository.itemFields,
-						imageTypes = listOf(ImageType.BACKDROP, ImageType.LOGO),
+						imageTypes = listOf(ImageType.THUMB, ImageType.BACKDROP, ImageType.LOGO),
 					).content.items.firstOrNull { episode ->
 						episode.type == BaseItemKind.EPISODE
 					}
@@ -239,6 +255,27 @@ private suspend fun getPlayablePreviewItem(
 	}
 
 	else -> null
+}
+
+/**
+ * null when [item] is a normal library title; for a Discover placeholder the
+ * YouTube id of its trailer, or "" when it has no trailer.
+ */
+private suspend fun discoverTrailerKey(api: ApiClient, item: BaseItemDto): String? {
+	val config = NovaSeerr.config(api) ?: return null
+	val full = runCatching { NovaSeerr.fullItem(api, item) }.getOrNull() ?: return null
+	if (!NovaSeerr.isDiscoverPlaceholder(config, full)) return null
+	return trailerKeyFor(config, full)
+}
+
+/** YouTube id of a title's trailer (from Jellyfin or TMDB), or "" when it has none. */
+private suspend fun trailerKeyFor(config: NovaSeerr.Config, full: BaseItemDto): String {
+	full.remoteTrailers.orEmpty()
+		.firstNotNullOfOrNull { NovaSeerr.youTubeId(it.url) }
+		?.let { return it }
+	val type = NovaSeerr.mediaType(full) ?: return ""
+	val tmdb = NovaSeerr.tmdbId(full) ?: return ""
+	return NovaSeerr.trailerKey(config, type, tmdb).orEmpty()
 }
 
 private suspend fun createHomePreviewForItem(
@@ -252,17 +289,31 @@ private suspend fun createHomePreviewForItem(
 		return cached.copy(item = selectedItem)
 	}
 
+	// JellyBridge Discover titles only contain a "favourite this to request it"
+	// placeholder video, so preview their real trailer instead (or nothing).
+	discoverTrailerKey(api, selectedItem)?.let { key ->
+		if (key.isEmpty()) return null
+		val trailerPreview = HomePreview(
+			item = selectedItem,
+			playableItem = selectedItem,
+			startPositionMs = 0L,
+			trailerKey = key,
+		)
+		HomePreviewCache.put(cacheKey, trailerPreview)
+		return trailerPreview
+	}
+
 	val resolvedItem = when (selectedItem.type) {
 		BaseItemKind.SERIES -> {
 			// The TV API is considerably faster than going through the legacy
 			// launcher helper. Keep that helper as a fallback for unusual
 			// Season/Series layouts.
 			getPlayablePreviewItem(api, selectedItem)
-				?: resolveWithJellyfinPlaybackHelper(context, playbackHelper, api, selectedItem)
+				?: resolveWithJellyfinPlaybackHelper(context, playbackHelper, selectedItem)
 		}
 
 		BaseItemKind.SEASON ->
-			resolveWithJellyfinPlaybackHelper(context, playbackHelper, api, selectedItem)
+			resolveWithJellyfinPlaybackHelper(context, playbackHelper, selectedItem)
 
 		else -> getPlayablePreviewItem(api, selectedItem)
 	} ?: return null
@@ -272,6 +323,24 @@ private suspend fun createHomePreviewForItem(
 	// media source, container and stream information is present. This is also
 	// what fixed direct Home playback for mixed MKV/MP4/AVI libraries.
 	val playableItem = refreshPlayableItem(api, resolvedItem)
+
+	// HDR / Dolby Vision files switch the TV into HDR mode, and some TVs then stay
+	// in the wrong colour mode after the short preview. Play the title's trailer
+	// for those instead (it's SDR), or just show the artwork.
+	if (isHdr(playableItem)) {
+		val config = NovaSeerr.config(api)
+		val full = runCatching { NovaSeerr.fullItem(api, selectedItem) }.getOrDefault(selectedItem)
+		val key = config?.let { trailerKeyFor(it, full) }.orEmpty()
+		if (key.isEmpty()) return null
+		val trailerPreview = HomePreview(
+			item = selectedItem,
+			playableItem = selectedItem,
+			startPositionMs = 0L,
+			trailerKey = key,
+		)
+		HomePreviewCache.put(cacheKey, trailerPreview)
+		return trailerPreview
+	}
 
 	val preview = HomePreview(
 		item = selectedItem,
@@ -311,7 +380,9 @@ fun rememberSelectedHomePreview(item: BaseItemDto?): HomePreview? {
 			Timber.w(error, "NOVA preview resolve failed: %s", item.name)
 			null
 		}
-		val remainingDelay = 1_350L - (SystemClock.elapsedRealtime() - resolveStartedAt)
+		// Trailers still have to buffer from YouTube, so don't hold them back further.
+		val minimumWait = if (resolvedPreview?.trailerKey != null) 0L else 1_350L
+		val remainingDelay = minimumWait - (SystemClock.elapsedRealtime() - resolveStartedAt)
 		if (remainingDelay > 0L) delay(remainingDelay)
 		preview = resolvedPreview
 	}
@@ -339,15 +410,20 @@ fun rememberRandomHomePreview(enabled: Boolean = true): HomePreview? {
 						includeItemTypes = listOf(BaseItemKind.MOVIE, BaseItemKind.EPISODE),
 						recursive = true,
 						sortBy = listOf(ItemSortBy.RANDOM),
-						limit = 12,
+						limit = 40,
+						// Only things that are really in the library: Discover (JellyBridge)
+						// placeholders are not playable files.
+						isMissing = false,
 						fields = setOf(
 							ItemFields.OVERVIEW,
 							ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+							ItemFields.PATH,
 						),
-						imageTypes = listOf(ImageType.BACKDROP, ImageType.LOGO),
+						imageTypes = listOf(ImageType.THUMB, ImageType.BACKDROP, ImageType.LOGO),
 					)
 
-					response.items.firstNotNullOfOrNull { candidate ->
+					NovaSeerr.withoutDiscover(api, response.items)
+						.firstNotNullOfOrNull { candidate ->
 						createHomePreviewForItem(context, playbackHelper, api, candidate)
 					}
 				}
@@ -393,6 +469,7 @@ fun HomePreviewPlayer(
 					ExoPlayerOptions(
 						preferFfmpeg = userPreferences[UserPreferences.preferExoPlayerFfmpeg],
 						enableDebugLogging = false,
+						enablePreviewLeveling = true,
 						baseDataSourceFactory = dataSourceFactory,
 					)
 				)
@@ -410,6 +487,10 @@ fun HomePreviewPlayer(
 	}
 
 	val previewId = preview?.playableItem?.id
+	val suspended by HomePreviewPlaybackController.suspended.collectAsState()
+	var resumed by remember(lifecycleOwner) {
+		mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+	}
 	var videoVisible by remember(previewId) { mutableStateOf(false) }
 	val backdropAlpha by animateFloatAsState(
 		targetValue = if (videoVisible) 0f else 1f,
@@ -417,16 +498,15 @@ fun HomePreviewPlayer(
 		label = "novaPreviewBackdropAlpha",
 	)
 	val previewBackdrop = remember(preview?.item?.id) {
-		preview?.item?.itemBackdropImages?.firstOrNull()
-			?: preview?.item?.parentBackdropImages?.firstOrNull()
+		preview?.item?.novaHeroImage
 	}
 
-	LaunchedEffect(previewId) {
+	LaunchedEffect(previewId, suspended, resumed) {
 		videoVisible = false
 		currentOnPlayingChanged(false)
 
 		val activePreview = preview
-		if (activePreview == null) {
+		if (activePreview == null || activePreview.trailerKey != null || suspended || !resumed) {
 			runCatching { playbackManager.state.stop() }
 			runCatching { playbackManager.queue.clear() }
 			return@LaunchedEffect
@@ -476,7 +556,7 @@ fun HomePreviewPlayer(
 			return@LaunchedEffect
 		}
 
-		if (!isActive) return@LaunchedEffect
+		if (!isActive || HomePreviewPlaybackController.suspended.value) return@LaunchedEffect
 		videoVisible = true
 		currentOnPlayingChanged(true)
 
@@ -505,7 +585,12 @@ fun HomePreviewPlayer(
 		HomePreviewPlaybackController.attach(playbackManager)
 
 		val observer = LifecycleEventObserver { _, event ->
+			if (event == Lifecycle.Event.ON_RESUME) {
+				resumed = true
+				HomePreviewPlaybackController.resumePreview(playbackManager)
+			}
 			if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+				resumed = false
 				videoVisible = false
 				currentOnPlayingChanged(false)
 				runCatching { playbackManager.state.stop() }
@@ -526,19 +611,40 @@ fun HomePreviewPlayer(
 
 	// The host stays composed even when preview == null, preserving the player
 	// for the next focused card. Only the video surface is conditional.
-	if (preview != null) {
-		Box(modifier = modifier) {
-			PlayerSurface(
-				modifier = Modifier.fillMaxSize(),
-				playbackManager = playbackManager,
-			)
+	// Discover trailers: once one has played on this screen, keep the YouTube
+	// player in place (hidden when idle) so moving between titles stays instant.
+	val trailerKey = preview?.trailerKey?.takeIf { !suspended && resumed }
+	var trailerHostUsed by remember { mutableStateOf(false) }
+	if (trailerKey != null && !trailerHostUsed) {
+		SideEffect { trailerHostUsed = true }
+	}
+	if (trailerKey != null || trailerHostUsed) {
+		NovaTrailerPlayer(
+			youTubeKey = trailerKey,
+			backdropUrl = previewBackdrop?.getUrl(api, maxWidth = 1280, maxHeight = 720),
+			modifier = modifier,
+			onPlayingChanged = { currentOnPlayingChanged(it) },
+			onFinished = { currentOnPreviewFinished() },
+		)
+	}
+	if (preview != null && preview.trailerKey == null) {
+		Box(modifier = modifier.clipToBounds()) {
+			val videoSize by playbackManager.state.videoSize.collectAsState()
+			val videoAspect = videoSize.aspectRatio.takeIf { it.isFinite() && it > 0f } ?: (16f / 9f)
+			BoxWithConstraints(Modifier.fillMaxSize()) {
+				// Match CENTER_CROP artwork: preserve proportions, fill the hero,
+				// and clip the excess instead of squeezing a movie into the banner.
+				val width = maxOf(maxWidth, maxHeight * videoAspect)
+				val height = width / videoAspect
+				PlayerSurface(
+					modifier = Modifier.requiredSize(width, height).align(Alignment.Center),
+					playbackManager = playbackManager,
+				)
+			}
 
 			if (previewBackdrop != null) {
-				AsyncImage(
+				HomeHeroArtwork(
 					url = previewBackdrop.getUrl(api, maxWidth = 1280, maxHeight = 720),
-					blurHash = previewBackdrop.blurHash,
-					aspectRatio = 16f / 9f,
-					scaleType = ImageView.ScaleType.CENTER_CROP,
 					modifier = Modifier
 						.fillMaxSize()
 						.alpha(backdropAlpha),
@@ -546,4 +652,17 @@ fun HomePreviewPlayer(
 			}
 		}
 	}
+}
+
+/** True when the title's video is HDR10 / HLG / Dolby Vision rather than normal (SDR). */
+private fun isHdr(item: BaseItemDto): Boolean {
+	val streams = item.mediaStreams.orEmpty() + item.mediaSources.orEmpty().flatMap { it.mediaStreams.orEmpty() }
+	return streams
+		.filter { it.type == org.jellyfin.sdk.model.api.MediaStreamType.VIDEO }
+		.any { stream ->
+			val rangeType = stream.videoRangeType
+			rangeType != null &&
+				rangeType != org.jellyfin.sdk.model.api.VideoRangeType.SDR &&
+				rangeType != org.jellyfin.sdk.model.api.VideoRangeType.UNKNOWN
+		}
 }

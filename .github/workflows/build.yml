@@ -1,47 +1,47 @@
-name: Build NOVA Fire TV
+name: Build NOVA
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
-    paths:
-      - "custom/**"
-      - "tools/**"
-      - ".github/workflows/build.yml"
-      - "README.md"
-      - "UPSTREAM.md"
-      - "LICENSE"
+    tags:
+      - "v*"
+
+concurrency:
+  group: nova-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build NOVA Fire TV APK + source
+    name: Build NOVA APK
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout NOVA customization source
+      - name: Checkout NOVA source
         uses: actions/checkout@v5
 
       - name: Fetch Jellyfin Android TV v0.19.10
         run: |
           git clone --depth 1 --branch v0.19.10 https://github.com/jellyfin/jellyfin-androidtv.git jellyfin-src
 
-      - name: Apply NOVA Fire TV custom files
+      - name: Apply NOVA changes
         run: |
           cp -R custom/app/. jellyfin-src/app/
+          mkdir -p jellyfin-src/app/src/main/res/drawable-nodpi
+          cp assets/*.png assets/*.jpg jellyfin-src/app/src/main/res/drawable-nodpi/
           python3 tools/apply_customizations.py
-
-      - name: Package corresponding source
-        run: |
-          mkdir -p output
-          zip -qr output/NOVA-FireTV-v1.0.0-source.zip jellyfin-src \
-            -x "jellyfin-src/.git/*" \
-               "jellyfin-src/**/build/*" \
-               "jellyfin-src/.gradle/*"
+          python3 tools/finalize_setup.py
+          python3 tools/finalize_preview_audio.py
+          python3 tools/finalize_home_playback.py
+          python3 tools/finalize_nova_extras.py
 
       - name: Setup Java 21
         uses: actions/setup-java@v5
@@ -52,59 +52,67 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Build NOVA Fire TV release APK
-        working-directory: jellyfin-src
-        run: ./gradlew assembleRelease -Pjellyfin.version=1.0.0
-
-      - name: Collect APK
+      # Official builds are signed with the key kept in this repository's secrets,
+      # so updates install over the top. Forks without those secrets get a
+      # throwaway key: their APK installs fine, but not over an official build.
+      - name: Signing key
+        env:
+          NOVA_KEYSTORE_BASE64: ${{ secrets.NOVA_KEYSTORE_BASE64 }}
+          NOVA_KEYSTORE_PASSWORD: ${{ secrets.NOVA_KEYSTORE_PASSWORD }}
+          NOVA_KEY_ALIAS: ${{ secrets.NOVA_KEY_ALIAS }}
+          NOVA_KEY_PASSWORD: ${{ secrets.NOVA_KEY_PASSWORD }}
         run: |
+          if [ -n "$NOVA_KEYSTORE_BASE64" ]; then
+            echo "$NOVA_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/nova.jks"
+            {
+              echo "NOVA_KEYSTORE_PASSWORD=$NOVA_KEYSTORE_PASSWORD"
+              echo "NOVA_KEY_ALIAS=$NOVA_KEY_ALIAS"
+              echo "NOVA_KEY_PASSWORD=$NOVA_KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+          else
+            PASS="$(openssl rand -hex 16)"
+            keytool -genkeypair -keystore "$RUNNER_TEMP/nova.jks" -alias nova -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=NOVA fork build" >/dev/null
+            echo "::add-mask::$PASS"
+            {
+              echo "NOVA_KEYSTORE_PASSWORD=$PASS"
+              echo "NOVA_KEY_ALIAS=nova"
+              echo "NOVA_KEY_PASSWORD=$PASS"
+            } >> "$GITHUB_ENV"
+          fi
+
+      - name: Build release APK
+        working-directory: jellyfin-src
+        env:
+          NOVA_VERSION: "1.2.0"
+        run: |
+          ./gradlew assembleRelease -Pjellyfin.version=$NOVA_VERSION \
+            -Pkeystore.file=$RUNNER_TEMP/nova.jks -Pkeystore.password=$NOVA_KEYSTORE_PASSWORD \
+            -Psigning.key.alias=$NOVA_KEY_ALIAS -Psigning.key.password=$NOVA_KEY_PASSWORD
+
+      - name: Collect APK and source
+        run: |
+          mkdir -p output
           APK="$(find jellyfin-src/app/build/outputs/apk/release -type f -iname "*.apk" | head -n 1)"
           test -n "$APK"
-          cp "$APK" output/NOVA-FireTV-v1.0.0.apk
+          cp "$APK" output/NOVA-FireTV.apk
+          # The exact patched source this APK was built from (GPL-2.0).
+          tar --exclude='*/build' --exclude='.git' --exclude='.gradle' -czf output/NOVA-FireTV-source.tar.gz jellyfin-src
 
-      - name: Upload APK and corresponding source as workflow artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v5
         with:
-          name: NOVA-FireTV-v1.0.0
+          name: NOVA-FireTV
           retention-days: 30
           if-no-files-found: error
           path: |
-            output/NOVA-FireTV-v1.0.0.apk
-            output/NOVA-FireTV-v1.0.0-source.zip
+            output/NOVA-FireTV.apk
+            output/NOVA-FireTV-source.tar.gz
 
-      - name: Publish NOVA Fire TV v1.0.0 GitHub Release
-        if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'Publish v1.0.0 release')
+      - name: Publish release (version tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cat > release-notes.md <<'EOF'
-          ## NOVA Fire TV v1.0.0
-
-          First public-ready NOVA Fire TV release.
-
-          NOVA Fire TV is an unofficial custom build/fork of Jellyfin Android TV v0.19.10 for Amazon Fire TV and Fire TV Stick, with a Netflix-style TV interface, cinematic browsing, remote-friendly navigation and NOVA visual customisations.
-
-          I don't know how to code; I designed/tested the changes and the code was made with ChatGPT. Feel free to use it as-is, fork it, improve it, fix things or add your own features.
-
-          This is not an official Jellyfin project and is not endorsed by Jellyfin.
-
-          Downloads:
-          - NOVA-FireTV-v1.0.0.apk
-          - NOVA-FireTV-v1.0.0-source.zip
-
-          Licence: GPL-2.0
-          EOF
-
-          if gh release view v1.0.0 >/dev/null 2>&1; then
-            gh release upload v1.0.0 \
-              output/NOVA-FireTV-v1.0.0.apk \
-              output/NOVA-FireTV-v1.0.0-source.zip \
-              --clobber
-          else
-            gh release create v1.0.0 \
-              output/NOVA-FireTV-v1.0.0.apk \
-              output/NOVA-FireTV-v1.0.0-source.zip \
-              --target "$GITHUB_SHA" \
-              --title "NOVA Fire TV v1.0.0" \
-              --notes-file release-notes.md
-          fi
+          gh release create "$GITHUB_REF_NAME" output/NOVA-FireTV.apk output/NOVA-FireTV-source.tar.gz \
+            --repo "$GITHUB_REPOSITORY" --title "NOVA $GITHUB_REF_NAME" --generate-notes

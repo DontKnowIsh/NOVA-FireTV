@@ -1,5 +1,19 @@
 package org.jellyfin.androidtv.ui.search.composable
 
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.Box
+import org.jellyfin.androidtv.ui.withAlpha
+import org.jellyfin.androidtv.ui.nova
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -31,6 +45,12 @@ import org.jellyfin.androidtv.ui.base.LocalTextStyle
 import org.jellyfin.androidtv.ui.base.ProvideTextStyle
 import org.jellyfin.androidtv.ui.base.Text
 
+/**
+ * NOVA search box. The text field is always present (the hint is drawn on top of
+ * it when empty) and keeps its own cursor, so the remote keyboard stays connected
+ * and letters are never typed in front of each other. Back closes the on-screen
+ * keyboard first, then leaves the page as normal.
+ */
 @Composable
 fun SearchTextInput(
 	query: String,
@@ -40,9 +60,16 @@ fun SearchTextInput(
 ) {
 	val interactionSource = remember { MutableInteractionSource() }
 	val focused by interactionSource.collectIsFocusedAsState()
-	val shape = RoundedCornerShape(8.dp)
-	val borderColor = if (focused) Color(0xFFE50914) else Color(0xFF3D3D3D)
-	val textColor = if (focused) Color.White else Color(0xFFE0E0E0)
+	val keyboard = LocalSoftwareKeyboardController.current
+	val shape = RoundedCornerShape(nova.corner(8))
+	val borderColor = if (focused) nova.accent else nova.surfaceHigh
+	val textColor = if (focused) Color.White else nova.textPrimary
+
+	// Local value with the cursor, kept at the end when the query changes from outside.
+	var fieldValue by remember { mutableStateOf(TextFieldValue(query, TextRange(query.length))) }
+	LaunchedEffect(query) {
+		if (query != fieldValue.text) fieldValue = TextFieldValue(query, TextRange(query.length))
+	}
 
 	ProvideTextStyle(
 		LocalTextStyle.current.copy(
@@ -51,25 +78,35 @@ fun SearchTextInput(
 		)
 	) {
 		BasicTextField(
-			modifier = modifier,
-			value = query,
+			modifier = modifier.onPreviewKeyEvent { event ->
+				// Fire TV sends Back here once the keyboard is closed: tidy up and let it through.
+				if (event.key == Key.Back && event.type == KeyEventType.KeyDown) keyboard?.hide()
+				false
+			},
+			value = fieldValue,
 			singleLine = true,
 			interactionSource = interactionSource,
-			onValueChange = onQueryChange,
-			keyboardActions = KeyboardActions { onQuerySubmit() },
+			onValueChange = { value ->
+				fieldValue = value
+				if (value.text != query) onQueryChange(value.text)
+			},
+			keyboardActions = KeyboardActions {
+				keyboard?.hide()
+				onQuerySubmit()
+			},
 			keyboardOptions = KeyboardOptions.Default.copy(
 				keyboardType = KeyboardType.Text,
 				imeAction = ImeAction.Search,
-				autoCorrectEnabled = true,
+				autoCorrectEnabled = false,
 				showKeyboardOnFocus = true,
 			),
 			textStyle = LocalTextStyle.current,
-			cursorBrush = SolidColor(Color(0xFFE50914)),
+			cursorBrush = SolidColor(nova.accent),
 			decorationBox = { innerTextField ->
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier
-						.background(Color(0xEE151515), shape)
+						.background(nova.surface.withAlpha(0xEE), shape)
 						.border(2.dp, borderColor, shape)
 						.padding(horizontal = 14.dp, vertical = 12.dp)
 				) {
@@ -78,13 +115,14 @@ fun SearchTextInput(
 						contentDescription = null,
 					)
 					Spacer(Modifier.width(12.dp))
-					if (query.isBlank()) {
-						Text(
-							text = "Search movies, TV shows, people...",
-							color = Color(0xFF777777),
-							fontSize = 16.sp,
-						)
-					} else {
+					Box(contentAlignment = Alignment.CenterStart) {
+						if (fieldValue.text.isEmpty()) {
+							Text(
+								text = "Search movies, TV shows, people...",
+								color = nova.textFaint,
+								fontSize = 16.sp,
+							)
+						}
 						innerTextField()
 					}
 				}

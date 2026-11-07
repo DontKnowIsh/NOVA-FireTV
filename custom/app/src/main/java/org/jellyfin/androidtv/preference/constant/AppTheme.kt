@@ -23,4 +23,7 @@ enum class AppTheme(
 
 	/** Near-black theme with a warm amber accent. */
 	AMBER(R.string.pref_theme_amber),
+
+	/** Seerr-style slate blue with indigo accents and rounder cards. */
+	SEERR(R.string.pref_theme_seerr),
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import org.jellyfin.androidtv.R
 import org.jellyfin.androidtv.preference.UserPreferences
 import org.jellyfin.androidtv.preference.constant.AppTheme
+import org.jellyfin.androidtv.ui.NovaTheme
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 
@@ -20,6 +21,7 @@ private val AppTheme.style
 		AppTheme.CINEMA_RED -> R.style.Theme_Jellyfin_CinemaRed
 		AppTheme.MIDNIGHT -> R.style.Theme_Jellyfin_Midnight
 		AppTheme.AMBER -> R.style.Theme_Jellyfin_Amber
+		AppTheme.SEERR -> R.style.Theme_Jellyfin_Seerr
 	}
 
 /**
@@ -36,6 +38,8 @@ fun FragmentActivity.applyTheme() {
 	val viewModel by viewModels<ThemeViewModel>()
 	val userPreferences by inject<UserPreferences>()
 	val theme = userPreferences[UserPreferences.appTheme]
+	// NOVA's own screens take their colours from the same setting.
+	NovaTheme.update(theme)
 
 	if (viewModel.theme != theme) {
 		if (viewModel.theme != null) {

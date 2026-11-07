@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="nova_cinema_red_accent">#E50914</color>
-    <color name="nova_cinema_red_bg">#080808</color>
-    <color name="nova_cinema_red_panel">#181818</color>
+    <color name="nova_cinema_red_accent">#B0060F</color>
+    <color name="nova_cinema_red_bg">#000000</color>
+    <color name="nova_cinema_red_panel">#140A0B</color>
     <color name="nova_cinema_red_white">#FFFFFF</color>
 
     <style name="Theme.Jellyfin.CinemaRed" parent="Theme.Jellyfin">
         <item name="android:colorPrimary">@color/nova_cinema_red_bg</item>
         <item name="android:colorPrimaryDark">@color/nova_cinema_red_bg</item>
+        <item name="android:colorControlHighlight">@color/nova_cinema_red_accent</item>
         <item name="android:colorAccent">@color/nova_cinema_red_accent</item>
         <item name="defaultBackground">@color/nova_cinema_red_bg</item>
         <item name="defaultSearchColor">@color/nova_cinema_red_accent</item>
@@ -18,9 +19,9 @@
         <item name="buttonDefaultNormalBackground">@color/nova_cinema_red_panel</item>
         <item name="buttonDefaultHighlightBackground">@color/nova_cinema_red_white</item>
         <item name="inputDefaultHighlightBackground">@color/nova_cinema_red_panel</item>
-        <item name="cardRounding">6dp</item>
-        <item name="buttonRounding">5dp</item>
-        <item name="inputRounding">5dp</item>
+        <item name="cardRounding">2dp</item>
+        <item name="buttonRounding">2dp</item>
+        <item name="inputRounding">2dp</item>
         <item name="popupMenuRounding">5dp</item>
         <item name="overlayDimDimmedLevel">18%</item>
         <item name="controlIconBackground">@color/nova_cinema_red_panel</item>

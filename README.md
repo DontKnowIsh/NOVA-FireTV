@@ -1,54 +1,123 @@
-# NOVA Fire TV
+# NOVA for Fire TV
 
-NOVA Fire TV is an **unofficial fork/custom build of the Jellyfin Android TV app**, adapted around a **Netflix-style TV interface** for **Amazon Fire TV and Fire TV Stick**.
+NOVA is an **unofficial, community-made Jellyfin client for Amazon Fire TV and Fire TV Stick**, built on the official [Jellyfin Android TV](https://github.com/jellyfin/jellyfin-androidtv) app (v0.19.10). It keeps Jellyfin's server connection, playback and user data, and wraps them in a cinematic, remote-first interface.
 
-The current build is based on **Jellyfin Android TV v0.19.10**.
+> **A note from the creator:** I don't know how to code. I came up with the ideas, tested everything on the TV, and reported what worked and what didn't. The code was written with AI assistants (ChatGPT and Claude). I'm sharing it because it might be useful to others. Use it as it is, fork it, fix it, or add your own features.
 
-> **A note from me:** I don't know how to code. I came up with the ideas, tested the app on the TV, reported what worked and what did not, and the code changes for this project were made with **ChatGPT**. I am sharing it because it may be useful to other people. You are welcome to use it exactly as it is, fork it, fix things, change things, or add your own features.
+---
 
-## What NOVA changes
+## ⚠️ Disclaimer — please read
 
-NOVA keeps the Jellyfin server connection, libraries, playback and user data, while changing and extending the Fire TV experience with a **Netflix-style browsing layout and presentation**. The current build includes a NOVA-styled home and library interface, remote-friendly navigation and focus highlighting, customised search and browsing screens, cinema-style themes, and additional playback/UI tweaks developed during testing.
+NOVA is **only a player and a remote control** for software you run yourself. It **does not host, provide, link to or recommend any films, shows, channels, playlists or download sources**, and it comes with none built in.
 
-This project is aimed at **Fire TV / Fire TV Stick**. It may also work on other Android TV devices, but that is not the main target.
+- Use NOVA **only with media you own or have the legal right to access**.
+- The optional download features talk to tools you install and configure yourself (Seerr, Radarr, Sonarr, qBittorrent). What those tools fetch, and from where, is **entirely your responsibility**.
+- The Live TV section plays playlists or logins that **you** enter. Only use services you are licensed to watch.
+- **The NOVA project does not condone piracy or copyright infringement of any kind.** If something is illegal where you live, don't use NOVA to do it.
 
-## Download / install
+NOVA is not affiliated with, or endorsed by, Jellyfin, Amazon, Seerr, Radarr, Sonarr, qBittorrent or any other project named here.
 
-The APK is provided with the project as **NOVA-FireTV-v1.0.0.apk**.
+---
 
-You can sideload it onto a Fire TV / Fire TV Stick using your preferred sideloading method or ADB. After installation, open NOVA and connect it to your Jellyfin server as normal.
+## What it can do
 
-Because this public build uses its own package ID, it is separate from the official Jellyfin Android TV app.
+### Watching
+- **Cinematic home and libraries** – a large hero banner with video previews, poster grids with an A–Z letter bar, sorting (A–Z, newest, year, rating), age filters and a "Surprise me" button.
+- **The same side bar on every page** – Home, Favourites, Categories, Search, Download, Downloads, Live TV and your libraries, plus *New Movies* and *New TV Shows*.
+- **Film and show pages** – Resume / Play from start, Continue SxEy for shows, seasons, cast, related titles and sequels.
+- **Music** – artists as a grid, albums and tracks.
+- **Themes** – Dark, Cinema Red, Seerr, Midnight, Amber, Emerald and Muted Purple restyle every NOVA screen, including Live TV.
+- **Profiles** – pick an avatar for each person on the "Who's watching" screen.
+- **Kids lock** – a PIN is needed to play anything rated 15 / R or above (on by default, PIN `0000`, change it in Settings).
 
-## Want to improve it?
+### Live TV (IPTV)
+- Bring your own **M3U / M3U8 playlist** (with an optional XMLTV guide) or **Xtream Codes login** from a TV service you subscribe to.
+- Category pills, channel cards with what's on now, a live preview window, favourites, channel search and full-screen playback with channel up/down.
+- Nothing is pre-loaded: you enter your own details on the TV, and they're stored only on that device.
 
-Please do. If you know more about Android/Kotlin/Jellyfin than I do and want to improve the code, fix a bug, clean something up, or add a feature, feel free to fork the repository and make changes. Pull requests and useful fixes are welcome.
+### Requesting and managing downloads (optional)
+These only appear if your server is set up for them (see *Optional extras* below).
+- **Download page** – search any film or show, browse by genre, studio, network or language, and open a preview with the trailer, description and age rating.
+- **Requests through Seerr**, with a season picker for TV shows.
+- **Choose a copy** – see the releases Radarr / Sonarr find, sorted by your Custom Format scores, and pick one.
+- **Downloads page** – progress, size, speed, seeds/peers and status from qBittorrent, with Pause / Resume, *Other copy* (blocklist and search again) and *Delete*.
+- **Delete from the server** – removes a title through Radarr / Sonarr, Seerr and Jellyfin (protected by a PIN).
+- **Server storage** – free space shown in Settings.
+- Optional **Indian films** setting – adds Hindi and Punjabi to the Download page, and sends Indian-language films to a Radarr root folder with "Indian" in its name.
 
-If you do not want to change anything, you can simply install the APK and use it as it is.
+### Fire TV extras
+- **Open NOVA on start-up** – NOVA can come up by itself when the Fire TV turns on or wakes.
+- **Navigation sounds** – Fire TV-style clicks as you move around (can be switched off).
 
-## Upstream / credits
+---
 
-NOVA Fire TV is derived from the official **Jellyfin Android TV** project:
+## What you need
 
-- Upstream project: Jellyfin Android TV
-- Upstream repository: https://github.com/jellyfin/jellyfin-androidtv
-- Base version used here: **v0.19.10**
-- Upstream licence: **GNU GPL v2.0**
+- A **Jellyfin server** (a recent version).
+- An **Amazon Fire TV device running Fire OS** (Fire TV Stick 4K Max, Fire TV Cube, older Fire TV Sticks).
+  The newest 2026 Fire TV Stick 4K / 4K Select / HD run **Vega OS** and **cannot install Android apps**. Check under *Settings → My Fire TV → About*.
+- Other Android TV devices may work, but Fire TV is the target.
 
-NOVA is an independent community modification and is **not an official Jellyfin project** and is not endorsed by the Jellyfin project.
+## Installing
 
-See [UPSTREAM.md](UPSTREAM.md) for the base-source details.
+1. Download **NOVA-FireTV.apk** from the [Releases](../../releases) page.
+2. On the Fire TV: *Settings → My Fire TV → Developer options* → turn on **ADB debugging** and **Apps from unknown sources**
+   (to see Developer options, open *About* and press OK on the device name seven times).
+3. Find the Fire TV's IP address under *Settings → My Fire TV → About → Network*.
+4. On a computer with [adb](https://developer.android.com/tools/releases/platform-tools):
+   ```
+   adb connect <fire-tv-ip>
+   adb install -r NOVA-FireTV.apk
+   ```
+   (Or use the *Downloader* app on the Fire TV with the APK's link.)
+5. Open NOVA, connect to your Jellyfin server and sign in.
 
-## Building from source
+**Optional:** for *Open NOVA on start-up* on Fire OS 8, also run:
+```
+adb shell appops set app.nova.firetv.iptv SYSTEM_ALERT_WINDOW allow
+```
 
-The GitHub Actions workflow fetches Jellyfin Android TV v0.19.10, applies the NOVA custom files and patch script, then builds the release APK.
+### First things to set in *Settings → Customization → NOVA*
+- **Change delete PIN** and **Change kids lock PIN** (both start as `0000`). The first time you change one, NOVA also asks you to choose an **8-digit master code**, which unlocks any PIN if you forget it. Each TV has its own; there is no built-in code.
+- **Theme**, **Navigation sounds**, **Open NOVA on start-up** and **Indian films** as you like.
 
-The workflow also creates a source archive containing the patched source tree used for that APK so the corresponding source is available alongside the binary.
+---
 
-## Licence
+## Optional extras (download features)
 
-This derivative project is distributed under the **GNU General Public License version 2 (GPL-2.0)**, consistent with the upstream Jellyfin Android TV project. See [LICENSE](LICENSE).
+NOVA finds everything through your Jellyfin server, so there is nothing to type in on the TV:
 
-## Disclaimer
+1. Install **Seerr** (or Jellyseerr / Overseerr) and connect it to **Radarr** and **Sonarr**.
+2. In Radarr and Sonarr, add **qBittorrent** as the download client (for the Downloads page).
+3. Install the **JellyBridge** plugin on Jellyfin and enter your Seerr URL and API key in its settings.
+4. Sign in to NOVA with a Jellyfin **administrator** account (NOVA reads the JellyBridge settings).
 
-This is a hobby/community project shared as-is. There is no warranty. Back up anything important and use builds at your own discretion.
+Without these, NOVA works as a normal Jellyfin player and the download pages simply stay empty.
+
+> Again: NOVA does not supply or suggest any indexers, trackers or sources. Configure your own tools responsibly and legally.
+
+---
+
+## Building it yourself
+
+Every push builds the APK with GitHub Actions (*Actions → latest run → Artifacts*). Tagging a version (`v1.2.0`) also publishes a Release with the APK and the full patched source.
+
+The workflow:
+1. fetches Jellyfin Android TV **v0.19.10**,
+2. copies in the files from `custom/` and `assets/`,
+3. runs the patch scripts in `tools/`,
+4. builds and signs the release APK.
+
+Forks without signing secrets get a throwaway key, so their APK installs but not over an official build. To sign your own builds, add `NOVA_KEYSTORE_BASE64`, `NOVA_KEYSTORE_PASSWORD`, `NOVA_KEY_ALIAS` and `NOVA_KEY_PASSWORD` as repository secrets.
+
+## Contributing
+
+Pull requests are welcome – bug fixes, clean-ups and new features. Please keep the project free of any content sources, playlists, indexers or instructions for obtaining copyrighted material.
+
+## Credits and licence
+
+NOVA is derived from **[Jellyfin Android TV](https://github.com/jellyfin/jellyfin-androidtv)** (GPL-2.0). See [UPSTREAM.md](UPSTREAM.md).
+
+This project is distributed under the **GNU General Public License version 2**, like the upstream project. See [LICENSE](LICENSE). The full source for every release is published alongside the APK.
+
+NOVA is not an official Jellyfin project and is not endorsed by the Jellyfin team. It is provided as-is, with no warranty.

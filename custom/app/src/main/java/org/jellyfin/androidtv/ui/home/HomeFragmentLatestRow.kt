@@ -28,7 +28,12 @@ class HomeFragmentLatestRow(
 		userViews
 			.filterNot { item -> item.collectionType in EXCLUDED_COLLECTION_TYPES || item.id in latestItemsExcludes }
 			.map { item ->
-				val title = context.getString(R.string.lbl_latest_in, item.name)
+				val title = when (item.name?.filter(Char::isLetterOrDigit)?.lowercase()) {
+					"movies" -> "Recently Added Movies"
+					"tvshows" -> "TV Shows"
+					"music" -> "Music"
+					else -> context.getString(R.string.lbl_latest_in, item.name)
+				}
 
 				if (item.collectionType == CollectionType.TVSHOWS) {
 					// Home should show each TV series once, not one card per newly-added episode.
@@ -80,8 +85,11 @@ class HomeFragmentLatestRow(
 			CollectionType.LIVETV,
 			CollectionType.BOXSETS,
 			CollectionType.BOOKS,
+			// Music lives on its own page; no albums row on Home.
+			CollectionType.MUSIC,
 		)
 
 		private const val ITEM_LIMIT = 50
 	}
 }
+

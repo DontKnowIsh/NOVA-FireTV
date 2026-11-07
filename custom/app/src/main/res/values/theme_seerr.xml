@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="nova_seerr_accent">#6366F1</color>
+    <color name="nova_seerr_bg">#111827</color>
+    <color name="nova_seerr_panel">#1F2937</color>
+    <color name="nova_seerr_white">#FFFFFF</color>
+
+    <style name="Theme.Jellyfin.Seerr" parent="Theme.Jellyfin">
+        <item name="android:colorPrimary">@color/nova_seerr_bg</item>
+        <item name="android:colorPrimaryDark">@color/nova_seerr_bg</item>
+        <item name="android:colorAccent">@color/nova_seerr_accent</item>
+        <item name="android:colorControlHighlight">@color/nova_seerr_accent</item>
+        <item name="defaultBackground">@color/nova_seerr_bg</item>
+        <item name="defaultSearchColor">@color/nova_seerr_accent</item>
+        <item name="progressPrimary">@color/nova_seerr_accent</item>
+        <item name="progressSecondary">@color/nova_seerr_white</item>
+        <item name="popupMenuBackground">@color/nova_seerr_panel</item>
+        <item name="android:colorButtonNormal">@color/nova_seerr_panel</item>
+        <item name="buttonDefaultNormalBackground">@color/nova_seerr_panel</item>
+        <item name="buttonDefaultHighlightBackground">@color/nova_seerr_accent</item>
+        <item name="inputDefaultHighlightBackground">@color/nova_seerr_panel</item>
+        <item name="cardRounding">12dp</item>
+        <item name="buttonRounding">8dp</item>
+        <item name="inputRounding">8dp</item>
+        <item name="popupMenuRounding">10dp</item>
+        <item name="overlayDimDimmedLevel">20%</item>
+        <item name="controlIconBackground">@color/nova_seerr_panel</item>
+        <item name="controlIconForegroundActive">@color/nova_seerr_accent</item>
+        <item name="controlIconForegroundInactive">@color/nova_seerr_white</item>
+        <item name="qrForeground">@color/nova_seerr_accent</item>
+    </style>
+</resources>
