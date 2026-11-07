@@ -2,6 +2,11 @@ name: Build NOVA
 
 on:
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Publish a release with this version tag (for example v1.2.0). Leave empty for a test build."
+        required: false
+        default: ""
   pull_request:
     branches:
       - main
@@ -112,14 +117,16 @@ jobs:
             output/NOVA-FireTV-source.tar.gz
 
       - name: Attach APK and source to the release
-        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v') || inputs.release != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${{ github.event.release.tag_name || github.ref_name }}"
+          TAG="${{ github.event.release.tag_name || inputs.release || github.ref_name }}"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" output/NOVA-FireTV.apk output/NOVA-FireTV-source.tar.gz --repo "$GITHUB_REPOSITORY" --clobber
           else
+            NOTES="$RUNNER_TEMP/notes.md"
+            if [ -f "release-notes/$TAG.md" ]; then cp "release-notes/$TAG.md" "$NOTES"; else echo "NOVA $TAG" > "$NOTES"; fi
             gh release create "$TAG" output/NOVA-FireTV.apk output/NOVA-FireTV-source.tar.gz \
-              --repo "$GITHUB_REPOSITORY" --title "NOVA $TAG" --generate-notes
+              --repo "$GITHUB_REPOSITORY" --title "NOVA $TAG" --notes-file "$NOTES" --target "$GITHUB_SHA"
           fi
