@@ -10,6 +10,8 @@ on:
       - main
     tags:
       - "v*"
+  release:
+    types: [published]
 
 concurrency:
   group: nova-${{ github.ref }}
@@ -109,10 +111,15 @@ jobs:
             output/NOVA-FireTV.apk
             output/NOVA-FireTV-source.tar.gz
 
-      - name: Publish release (version tags only)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Attach APK and source to the release
+        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" output/NOVA-FireTV.apk output/NOVA-FireTV-source.tar.gz \
-            --repo "$GITHUB_REPOSITORY" --title "NOVA $GITHUB_REF_NAME" --generate-notes
+          TAG="${{ github.event.release.tag_name || github.ref_name }}"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" output/NOVA-FireTV.apk output/NOVA-FireTV-source.tar.gz --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" output/NOVA-FireTV.apk output/NOVA-FireTV-source.tar.gz \
+              --repo "$GITHUB_REPOSITORY" --title "NOVA $TAG" --generate-notes
+          fi
