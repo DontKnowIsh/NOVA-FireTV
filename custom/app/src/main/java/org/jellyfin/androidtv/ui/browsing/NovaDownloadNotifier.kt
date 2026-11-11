@@ -54,7 +54,13 @@ import kotlin.math.sin
  */
 object NovaDownloadNotifier : Application.ActivityLifecycleCallbacks {
 	/** A pop-up: a finished download (green ✓) or a download that needs attention (amber !). */
-	private data class Finished(val title: String, val detail: String, val problem: Boolean = false)
+	private data class Finished(
+		val title: String,
+		val detail: String,
+		val problem: Boolean = false,
+		/** The film or show's poster, shown next to the tick. */
+		val posterUrl: String? = null,
+	)
 
 	/** Problems already shown, so each is only announced once. */
 	private val warned = HashSet<String>()
@@ -182,6 +188,13 @@ object NovaDownloadNotifier : Application.ActivityLifecycleCallbacks {
 	private fun JsonObject.text(key: String) = (this[key] as? JsonPrimitive)?.contentOrNull
 	private fun JsonObject.number(key: String) = (this[key] as? JsonPrimitive)?.intOrNull
 
+	/** The poster from a Radarr movie / Sonarr series (its online copy, so it loads anywhere). */
+	private fun JsonObject.poster(): String? = (this["images"] as? JsonArray).orEmpty()
+		.mapNotNull { it as? JsonObject }
+		.firstOrNull { it.text("coverType") == "poster" }
+		?.let { it.text("remoteUrl") ?: it.text("url") }
+		?.takeIf { it.startsWith("http") }
+
 	private fun movieImports(service: NovaArr.Service, from: Instant): List<Imported> =
 		history(service, from, "&includeMovie=true").map { record ->
 			val movie = record["movie"] as? JsonObject
@@ -189,7 +202,7 @@ object NovaDownloadNotifier : Application.ActivityLifecycleCallbacks {
 			val year = movie?.number("year")?.takeIf { it > 0 }
 			Imported(
 				ids = listOf("radarr-${record.number("id")}"),
-				finished = Finished(title, listOfNotNull("Film", year?.toString()).joinToString(" · ")),
+				finished = Finished(title, listOfNotNull("Film", year?.toString()).joinToString(" · "), posterUrl = movie?.poster()),
 			)
 		}
 
@@ -212,7 +225,8 @@ object NovaDownloadNotifier : Application.ActivityLifecycleCallbacks {
 				} else {
 					"${records.size} episodes"
 				}
-				Imported(ids = records.map { "sonarr-${it.number("id")}" }, finished = Finished(show, detail))
+				val poster = (first["series"] as? JsonObject)?.poster()
+				Imported(ids = records.map { "sonarr-${it.number("id")}" }, finished = Finished(show, detail, posterUrl = poster))
 			}
 
 	private val SUCCESS = 0xFF2E9E4F.toInt()
@@ -310,6 +324,19 @@ object NovaDownloadNotifier : Application.ActivityLifecycleCallbacks {
 					setColor(if (finished.problem) WARNING else SUCCESS)
 				}
 			}, LinearLayout.LayoutParams(dp(30), dp(30)).apply { rightMargin = dp(12) })
+
+			// A small copy of the card's picture, just after the tick.
+			finished.posterUrl?.let { url ->
+				addView(org.jellyfin.androidtv.ui.AsyncImageView(context).apply {
+					scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+					clipToOutline = true
+					background = GradientDrawable().apply {
+						setColor(p.surfaceHigh.toArgb())
+						cornerRadius = dp(6).toFloat()
+					}
+					load(url = url)
+				}, LinearLayout.LayoutParams(dp(40), dp(60)).apply { rightMargin = dp(12) })
+			}
 
 			addView(LinearLayout(context).apply {
 				orientation = LinearLayout.VERTICAL

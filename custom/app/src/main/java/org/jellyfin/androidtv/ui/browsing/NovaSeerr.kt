@@ -250,6 +250,49 @@ object NovaSeerr {
 		synchronized(trailerCache) { trailerCache["${type.apiName}/$tmdbId"] = key }
 	}
 
+	private val trailerListCache = HashMap<String, List<String>>()
+
+	/**
+	 * Every YouTube video for a title, best first (trailers, then teasers, then
+	 * the rest). Some uploaders block playing inside apps, so the preview tries
+	 * the next one when a video won't play.
+	 */
+	fun trailersFrom(details: JsonObject): List<String> {
+		val videos = (details["relatedVideos"] as? JsonArray).orEmpty()
+			.mapNotNull { it as? JsonObject }
+			.filter { it.string("site").equals("YouTube", ignoreCase = true) && !it.string("key").isNullOrBlank() }
+		val rank = { video: JsonObject ->
+			when (video.string("type")) {
+				"Trailer" -> 0
+				"Teaser" -> 1
+				"Clip" -> 2
+				else -> 3
+			}
+		}
+		return videos.sortedBy(rank).mapNotNull { it.string("key") }.distinct().take(6)
+	}
+
+	fun rememberTrailers(type: MediaType, tmdbId: Int, keys: List<String>) {
+		synchronized(trailerListCache) { trailerListCache["${type.apiName}/$tmdbId"] = keys }
+	}
+
+	/** All of a title's YouTube videos, best first (from the cache, or asked of Seerr). */
+	suspend fun trailerKeys(config: Config, type: MediaType, tmdbId: Int): List<String> {
+		val cacheKey = "${type.apiName}/$tmdbId"
+		synchronized(trailerListCache) { trailerListCache[cacheKey]?.let { return it } }
+		val keys = withContext(Dispatchers.IO) {
+			runCatching {
+				val body = http(
+					url = "${config.baseUrl}/api/v1/${type.apiName}/$tmdbId",
+					headers = mapOf("X-Api-Key" to config.apiKey),
+				)
+				trailersFrom(json.parseToJsonElement(body).jsonObject)
+			}.onFailure { Timber.w(it, "NOVA: Seerr trailers failed for %s %d", type, tmdbId) }.getOrNull()
+		} ?: return emptyList()
+		rememberTrailers(type, tmdbId, keys)
+		return keys
+	}
+
 	/** YouTube id from a Jellyfin remote trailer URL (watch?v=, youtu.be/, embed/). */
 	fun youTubeId(url: String?): String? {
 		if (url.isNullOrBlank()) return null
@@ -531,7 +574,7 @@ object NovaSeerr {
 			val code = connection.responseCode
 			val stream = if (code in 200..299) connection.inputStream else connection.errorStream
 			val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
-			if (code !in 200..299) error("HTTP $code from $method $url: ${text.take(200)}")
+			if (code !in 200..299) error("HTTP $code from $method $url: ${text.take(2000)}")
 			return text
 		} finally {
 			connection.disconnect()

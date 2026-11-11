@@ -1,7 +1,6 @@
 package org.jellyfin.androidtv.ui.browsing
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,8 +50,9 @@ class NovaPinActivity : FragmentActivity() {
 				var note by remember { mutableStateOf<String?>(null) }
 
 				fun done(message: String) {
-					Toast.makeText(this@NovaPinActivity, message, Toast.LENGTH_SHORT).show()
-					finish()
+					// NOVA's own message, shown for a moment before the screen closes.
+					org.jellyfin.androidtv.ui.NovaToast.show(this@NovaPinActivity, message)
+					android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ finish() }, 1_400L)
 				}
 
 				JellyfinTheme {

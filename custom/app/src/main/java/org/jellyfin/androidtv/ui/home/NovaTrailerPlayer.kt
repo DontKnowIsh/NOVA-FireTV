@@ -14,6 +14,8 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -127,10 +129,22 @@ private object NovaTrailerWebView {
 				"NovaTrailer",
 			)
 			// Re-fit the video whenever the hero area changes size (or screen).
+			// The page's own idea of its size can lag behind on Fire TV (which left a
+			// black strip down the right), so NOVA passes the real size in.
 			addOnLayoutChangeListener { view, l, t, r, b, ol, ot, or, ob ->
-				if (r - l != or - ol || b - t != ob - ot) {
-					(view as WebView).evaluateJavascript("if (window.novaFit) novaFit();", null)
-				}
+				if (r - l != or - ol || b - t != ob - ot) sendSize(view as WebView)
+			}
+			// Inside YouTube's own player (a frame NOVA's page can't reach): hide its
+			// pause / play flash and spinner, and make the video fill the frame. Without
+			// this a pause icon could stay on screen and some videos left a black strip.
+			if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+				runCatching {
+					WebViewCompat.addDocumentStartJavaScript(
+						this,
+						YOUTUBE_FRAME_SCRIPT,
+						setOf("https://www.youtube.com", "https://www.youtube-nocookie.com"),
+					)
+				}.onFailure { Timber.w(it, "NOVA trailer: couldn't add the YouTube tidy-up") }
 			}
 			loadDataWithBaseURL(TRAILER_ORIGIN, PLAYER_HTML, "text/html", "utf-8", null)
 		}
@@ -144,7 +158,17 @@ private object NovaTrailerWebView {
 	fun play(webView: WebView, key: String) {
 		if (webView !== this.webView) return
 		currentKey = key
+		sendSize(webView)
 		runCatching { webView.evaluateJavascript("novaMute($muted); novaPlay('$key');", null) }
+	}
+
+	/** Tells the page its real size (in CSS pixels). */
+	private fun sendSize(webView: WebView) {
+		val density = webView.resources.displayMetrics.density
+		val width = webView.width / density
+		val height = webView.height / density
+		if (width <= 0f || height <= 0f) return
+		runCatching { webView.evaluateJavascript("if (window.novaSize) novaSize($width, $height);", null) }
 	}
 
 	fun stop() {
@@ -218,9 +242,12 @@ fun NovaTrailerPlayer(
 	modifier: Modifier = Modifier,
 	onPlayingChanged: (Boolean) -> Unit = {},
 	onFinished: () -> Unit = {},
+	/** The video couldn't be played (blocked in apps, removed, or never started). */
+	onFailed: () -> Unit = {},
 ) {
 	val currentOnPlayingChanged by rememberUpdatedState(onPlayingChanged)
 	val currentOnFinished by rememberUpdatedState(onFinished)
+	val currentOnFailed by rememberUpdatedState(onFailed)
 	var playing by remember(youTubeKey) { mutableStateOf(false) }
 	var done by remember(youTubeKey) { mutableStateOf(false) }
 	val active = youTubeKey != null && !done
@@ -269,6 +296,7 @@ fun NovaTrailerPlayer(
 				if (key != youTubeKey) return
 				Timber.w("NOVA trailer %s could not play (YouTube error %s)", key, code)
 				finish()
+				currentOnFailed()
 			}
 		}
 		NovaTrailerWebView.listener = listener
@@ -283,7 +311,10 @@ fun NovaTrailerPlayer(
 		if (youTubeKey == null) return@LaunchedEffect
 		if (!playing) {
 			delay(15_000L)
-			if (!playing) finish()
+			if (!playing) {
+				finish()
+				currentOnFailed()
+			}
 		} else {
 			delay(150_000L)
 			finish()
@@ -327,6 +358,23 @@ fun NovaTrailerPlayer(
 	}
 }
 
+/** Runs inside YouTube's player frame: hides its play/pause flash, spinner and big play button. */
+private const val YOUTUBE_FRAME_SCRIPT = """
+(function () {
+	if (window.__novaTidy) return;
+	window.__novaTidy = true;
+	var css =
+		'.ytp-bezel, .ytp-bezel-text-wrapper, .ytp-pause-overlay, .ytp-large-play-button, ' +
+		'.ytp-spinner, .ytp-cued-thumbnail-overlay { display: none !important; opacity: 0 !important; }';
+	function add() {
+		var style = document.createElement('style');
+		style.textContent = css;
+		(document.head || document.documentElement).appendChild(style);
+	}
+	if (document.documentElement) add(); else document.addEventListener('DOMContentLoaded', add);
+})();
+"""
+
 private const val DESKTOP_USER_AGENT =
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
@@ -357,7 +405,9 @@ private val PLAYER_HTML = """
 <body>
 <div id="player"></div>
 <script>
-	var player = null, ready = false, current = null, pending = null, fitW = 0, fitH = 0;
+	var player = null, ready = false, current = null, pending = null, fitW = 0, fitH = 0, realW = 0, realH = 0;
+	// The real size of NOVA's trailer area, sent in from Android.
+	function novaSize(w, h) { realW = w; realH = h; novaFit(); }
 	var tag = document.createElement('script');
 	tag.src = 'https://www.youtube.com/iframe_api';
 	document.head.appendChild(tag);
@@ -366,8 +416,8 @@ private val PLAYER_HTML = """
 	// between screens with different hero sizes, and CSS vh / YouTube's own size
 	// could stay stuck at the old one, which drew the video too high.
 	function novaFit() {
-		var W = window.innerWidth || document.documentElement.clientWidth;
-		var H = window.innerHeight || document.documentElement.clientHeight;
+		var W = realW || window.innerWidth || document.documentElement.clientWidth;
+		var H = realH || window.innerHeight || document.documentElement.clientHeight;
 		if (!W || !H) return;
 		var w = Math.ceil(Math.max(W, H * 16 / 9)), h = Math.ceil(Math.max(W * 9 / 16, H));
 		// Only touch the player when the size really changed: resizing a playing
@@ -379,20 +429,28 @@ private val PLAYER_HTML = """
 		if (ready) { try { player.setSize(w, h); } catch (e) {} }
 	}
 	window.addEventListener('resize', novaFit);
+	// The page size can settle a moment after the player moves; check now and then
+	// (novaFit does nothing when the size hasn't changed).
+	setInterval(novaFit, 1000);
 	function novaPlay(key) {
 		novaFit();
 		if (current === key && ready) return;
 		current = key;
+		shown = null;
 		if (ready) {
+			// Silent until the picture is showing, so sound and picture start together.
+			try { player.mute(); } catch (e) {}
 			player.loadVideoById({ videoId: key, suggestedQuality: 'hd720' });
-			novaMute(muted);
 		}
 		else pending = key;
 	}
-	var muted = false;
+	var muted = false, shown = null;
 	function novaMute(m) {
 		muted = m;
-		if (ready) { try { if (m) player.mute(); else player.unMute(); } catch (e) {} }
+		if (!ready) return;
+		try {
+			if (m || shown !== current) player.mute(); else player.unMute();
+		} catch (e) {}
 	}
 	function novaStop() {
 		current = null; pending = null;
@@ -416,10 +474,15 @@ private val PLAYER_HTML = """
 					if (!current) return;
 					var key = current;
 					if (e.data === 1) {
-						// YouTube flashes its play icon as a video starts; reveal it a moment later.
+						// YouTube flashes its play icon as a video starts; reveal it a moment
+						// later, and turn the sound on at the same time.
 						setTimeout(function () {
-							if (current === key && player.getPlayerState() === 1) NovaTrailer.onPlaying(key);
-						}, 900);
+							if (current === key && player.getPlayerState() === 1 && shown !== key) {
+								shown = key;
+								if (!muted) { try { player.unMute(); } catch (e) {} }
+								NovaTrailer.onPlaying(key);
+							}
+						}, 450);
 					}
 					// Paused by YouTube itself: just carry on. Short buffering is left
 					// alone too; covering the video each time made it look like it kept

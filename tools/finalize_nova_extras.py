@@ -922,3 +922,15 @@ nova_tidy("java/org/jellyfin/androidtv/ui/startup/fragment/StartupToolbarFragmen
 old_toolbar = root / "java/org/jellyfin/androidtv/ui/shared/toolbar/MainToolbar.kt"
 if old_toolbar.exists():
     old_toolbar.unlink()
+
+
+# YouTube trailers: androidx.webkit lets NOVA tidy up YouTube's player frame
+# (see NovaTrailerPlayer).
+build_file = root.parent.parent / "build.gradle.kts"
+build_text = build_file.read_text(encoding="utf-8")
+if "androidx.webkit:webkit" not in build_text:
+    marker = "dependencies {\n"
+    if marker not in build_text:
+        raise RuntimeError("NOVA: app dependencies block not found")
+    build_text = build_text.replace(marker, marker + '\timplementation("androidx.webkit:webkit:1.12.1")\n', 1)
+    build_file.write_text(build_text, encoding="utf-8")

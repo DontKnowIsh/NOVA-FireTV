@@ -53,7 +53,15 @@ fun SearchVoiceInput(
 				is SpeechRecognizerStatus.Listening,
 				SpeechRecognizerStatus.RequestingPermission -> null
 			}
-			if (string != null) Toast.makeText(context, context.getString(string), Toast.LENGTH_LONG).show()
+			if (string != null) {
+				val activity = generateSequence(context) { (it as? android.content.ContextWrapper)?.baseContext }
+					.filterIsInstance<android.app.Activity>().firstOrNull()
+				if (activity != null) {
+					org.jellyfin.androidtv.ui.NovaToast.show(activity, context.getString(string), error = true, long = true)
+				} else {
+					Toast.makeText(context, context.getString(string), Toast.LENGTH_LONG).show()
+				}
+			}
 		},
 	)
 

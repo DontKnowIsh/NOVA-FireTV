@@ -633,6 +633,25 @@ class NovaDownloadFragment : Fragment() {
 						startDownload(preview)
 					},
 					onDismiss = { closePreview() },
+					// Still searching (or waiting): offer to stop it everywhere.
+					onRemove = when (statusOf(preview).state) {
+						NovaSeerr.State.SEARCHING,
+						NovaSeerr.State.UNRELEASED,
+						NovaSeerr.State.PENDING_APPROVAL -> ({
+							closePreview()
+							scope.launch {
+								when (val outcome = NovaLibraryDelete.removeRequest(previewConfig, preview)) {
+									NovaLibraryDelete.Outcome.Deleted -> {
+										statuses[keyOf(preview)] = NovaSeerr.Status(NovaSeerr.State.NOT_REQUESTED)
+										org.jellyfin.androidtv.ui.NovaToast.show(requireActivity(), "Stopped searching for ${preview.title}")
+									}
+									is NovaLibraryDelete.Outcome.Failed ->
+										org.jellyfin.androidtv.ui.NovaToast.show(requireActivity(), outcome.reason, error = true, long = true)
+								}
+							}
+						})
+						else -> null
+					},
 				)
 			}
 			}

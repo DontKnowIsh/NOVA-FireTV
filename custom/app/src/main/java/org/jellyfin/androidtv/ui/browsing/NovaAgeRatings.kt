@@ -48,6 +48,7 @@ object NovaAgeRatings {
 		val obj = NovaSeerr.json.parseToJsonElement(body).jsonObject
 		// Same answer has the trailer and description: keep them so the preview opens straight away.
 		NovaSeerr.rememberTrailer(result.type, result.tmdbId, NovaSeerr.trailerFrom(obj))
+		NovaSeerr.rememberTrailers(result.type, result.tmdbId, NovaSeerr.trailersFrom(obj))
 		NovaPreviewCache.put(result, previewFrom(obj, isMovie))
 		fun byCountry(results: JsonArray?, country: String) =
 			results.orEmpty().mapNotNull { it as? JsonObject }.firstOrNull { it.string("iso_3166_1") == country }

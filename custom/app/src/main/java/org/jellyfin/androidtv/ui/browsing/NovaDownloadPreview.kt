@@ -30,7 +30,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -42,6 +41,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import kotlinx.coroutines.Dispatchers
@@ -119,6 +120,7 @@ private suspend fun loadPreviewDetails(cfg: NovaSeerr.Config, result: NovaSeerr.
 			val obj = NovaSeerr.json.parseToJsonElement(body).jsonObject
 			// One request for both the description and the trailer.
 			NovaSeerr.rememberTrailer(result.type, result.tmdbId, NovaSeerr.trailerFrom(obj))
+			NovaSeerr.rememberTrailers(result.type, result.tmdbId, NovaSeerr.trailersFrom(obj))
 			previewFrom(obj, result.type == NovaSeerr.MediaType.MOVIE).also { NovaPreviewCache.put(result, it) }
 		}.onFailure { Timber.w(it, "NOVA: preview details failed") }.getOrNull()
 	}
@@ -135,20 +137,27 @@ internal fun NovaDownloadPreview(
 	status: NovaSeerr.Status,
 	onDownload: () -> Unit,
 	onDismiss: () -> Unit,
+	/** Still searching / waiting: take it out of Radarr / Sonarr and Seerr. Null hides the button. */
+	onRemove: (() -> Unit)? = null,
 ) {
 	var details by remember(result.tmdbId) { mutableStateOf(NovaPreviewCache.get(result)) }
 	var detailsLoaded by remember(result.tmdbId) { mutableStateOf(details != null) }
-	var trailer by remember(result.tmdbId) { mutableStateOf<String?>(null) }
+	// Every video for the title, best first; if one won't play, the next is tried.
+	var trailers by remember(result.tmdbId) { mutableStateOf<List<String>>(emptyList()) }
+	var trailerIndex by remember(result.tmdbId) { mutableStateOf(0) }
+	val trailer = trailers.getOrNull(trailerIndex)
 	LaunchedEffect(result.tmdbId) {
 		// Usually already fetched with the card's age rating, so this is instant.
 		if (details == null) details = loadPreviewDetails(config, result)
 		detailsLoaded = true
-		trailer = NovaSeerr.trailerKey(config, result.type, result.tmdbId)
+		trailers = NovaSeerr.trailerKeys(config, result.type, result.tmdbId)
 	}
 	val ageRating by produceState(NovaAgeRatings.cached(result)?.ifEmpty { null }, result.tmdbId) {
 		value = NovaAgeRatings.get(result)
 	}
 	val downloadFocus = remember { FocusRequester() }
+	val removeFocus = remember { FocusRequester() }
+	var confirmRemove by remember(result.tmdbId) { mutableStateOf(false) }
 	var trailerPlaying by remember { mutableStateOf(false) }
 	var hasFocus by remember { mutableStateOf(false) }
 
@@ -162,8 +171,16 @@ internal fun NovaDownloadPreview(
 			.background(Color.Black.withAlpha(0xB3))
 			.onPreviewKeyEvent { event ->
 				when (event.key) {
-					// Only one button, so the arrows do nothing (and never move the page behind).
-					Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown -> true
+					// Left / Right between the buttons; nothing ever moves the page behind.
+					Key.DirectionLeft -> {
+						if (event.type == KeyEventType.KeyDown) runCatching { downloadFocus.requestFocus() }
+						true
+					}
+					Key.DirectionRight -> {
+						if (event.type == KeyEventType.KeyDown && onRemove != null) runCatching { removeFocus.requestFocus() }
+						true
+					}
+					Key.DirectionUp, Key.DirectionDown -> true
 					else -> false
 				}
 			},
@@ -173,22 +190,34 @@ internal fun NovaDownloadPreview(
 			modifier = Modifier
 				.onFocusChanged { hasFocus = it.hasFocus }
 				.width(720.dp)
-				.clip(RoundedCornerShape(nova.corner(14)))
-				.background(nova.surface)
+				// Rounded background, but no rounded clip: clipping the trailer to a
+				// rounded shape made Android draw it off-screen first, and videos the
+				// Fire TV plays with its video chip then showed black with sound.
+				.background(nova.surface, RoundedCornerShape(nova.corner(14)))
 				.border(1.dp, nova.surfaceHigh, RoundedCornerShape(nova.corner(14))),
 		) {
 			// Trailer across the whole top; the picture fills it until the trailer plays.
-			Box(modifier = Modifier.fillMaxWidth().height(250.dp).clipToBounds().background(Color.Black)) {
+			// Set in from the edges like a framed picture, so its corners sit inside the
+			// card's rounded corners.
+			Box(
+				modifier = Modifier
+					.padding(start = 10.dp, end = 10.dp, top = 10.dp)
+					.fillMaxWidth()
+					.height(250.dp)
+					.clipToBounds()
+					.background(Color.Black),
+			) {
 				// 16:9 and full width (the top and bottom are trimmed), so there are no black bars.
 				NovaTrailerPlayer(
 					youTubeKey = trailer,
 					backdropUrl = null,
 					modifier = Modifier.fillMaxWidth().requiredHeight(405.dp).align(Alignment.Center),
 					onPlayingChanged = { trailerPlaying = it },
+					onFailed = { trailerIndex++ },
 				)
 				val pictureAlpha by androidx.compose.animation.core.animateFloatAsState(
 					targetValue = if (trailerPlaying) 0f else 1f,
-					animationSpec = androidx.compose.animation.core.tween(if (trailerPlaying) 700 else 120),
+					animationSpec = androidx.compose.animation.core.tween(if (trailerPlaying) 350 else 120),
 					label = "novaPreviewPicture",
 				)
 				val picture = details?.backdropUrl ?: result.posterUrl
@@ -213,6 +242,9 @@ internal fun NovaDownloadPreview(
 						modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
 					)
 				}
+				// Rounded corners painted on top in the card's colour (clipping the
+				// trailer itself turns hardware-played videos black).
+				NovaCornerMask(color = nova.surface, radius = 10.dp, modifier = Modifier.fillMaxSize())
 			}
 
 			Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 18.dp)) {
@@ -266,6 +298,16 @@ internal fun NovaDownloadPreview(
 						else -> status.label()
 					}
 					PreviewButton(label, primary = true, modifier = Modifier.focusRequester(downloadFocus), onClick = onDownload)
+					if (onRemove != null) {
+						PreviewButton(
+							if (confirmRemove) "Press again to remove" else "✕  Stop searching",
+							primary = false,
+							modifier = Modifier.focusRequester(removeFocus),
+							onClick = {
+								if (confirmRemove) onRemove() else confirmRemove = true
+							},
+						)
+					}
 				}
 			}
 		}
@@ -306,4 +348,23 @@ private fun PreviewButton(label: String, primary: Boolean, onClick: () -> Unit, 
 		),
 		contentPadding = PaddingValues(horizontal = 22.dp, vertical = 9.dp),
 	) { Text(label, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+}
+
+/** Covers the four corners outside a rounded rectangle, so square content looks rounded. */
+@Composable
+private fun NovaCornerMask(color: Color, radius: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+	androidx.compose.foundation.Canvas(modifier = modifier) {
+		val r = radius.toPx()
+		val mask = androidx.compose.ui.graphics.Path().apply {
+			fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+			addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
+			addRoundRect(
+				androidx.compose.ui.geometry.RoundRect(
+					rect = androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height),
+					cornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
+				),
+			)
+		}
+		drawPath(mask, color)
+	}
 }

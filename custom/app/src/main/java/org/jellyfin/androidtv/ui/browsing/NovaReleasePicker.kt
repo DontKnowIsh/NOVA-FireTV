@@ -87,7 +87,9 @@ fun NovaReleasePicker(
 		}
 		if (prepared == null) {
 			failed = true
-			phase = "Couldn't add this to $appName. You can still let it choose automatically."
+			val reason = NovaReleases.lastError?.takeIf { it.isNotBlank() }
+			phase = "Couldn't add this to $appName" + (reason?.let { " ($it)" } ?: "") +
+				". You can still let it choose automatically."
 			return@LaunchedEffect
 		}
 		target = prepared
@@ -201,7 +203,7 @@ private fun ReleaseContent(release: NovaReleases.Release, busy: Boolean) {
 			if (release.formatScore > 0) Chip("★ " + release.formats.ifEmpty { listOf("Preferred") }.joinToString(" / "), nova.accent)
 			if (release.quality.isNotBlank()) Chip(release.quality, nova.statusUnreleased)
 			if (release.sizeBytes > 0) Chip(NovaReleases.friendlySize(release.sizeBytes), nova.surfaceHigh)
-			release.coverage?.let { Chip(it, nova.statusDownloading) }
+			release.coverage?.let { Chip(it, if (it == "Whole season") nova.statusDownloaded else nova.statusDownloading) }
 			if (release.languages.isNotEmpty()) Chip(release.languages.take(3).joinToString(" / "), nova.surfaceHigh)
 			if (release.indexer.isNotBlank()) Chip(release.indexer, nova.surfaceHigh)
 			NovaReleases.friendlyAge(release.ageHours)?.let { Chip(it, nova.surfaceHigh) }

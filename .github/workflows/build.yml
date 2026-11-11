@@ -91,7 +91,7 @@ jobs:
       - name: Build release APK
         working-directory: jellyfin-src
         env:
-          NOVA_VERSION: "1.2.0"
+          NOVA_VERSION: "1.2.1"
         run: |
           ./gradlew assembleRelease -Pjellyfin.version=$NOVA_VERSION \
             -Pkeystore.file=$RUNNER_TEMP/nova.jks -Pkeystore.password=$NOVA_KEYSTORE_PASSWORD \

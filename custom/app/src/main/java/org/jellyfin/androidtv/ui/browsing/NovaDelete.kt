@@ -145,6 +145,65 @@ object NovaLibraryDelete {
 			.distinct()
 	}.getOrDefault(emptyList())
 
+	/**
+	 * Stops a film or show that is still "Searching" (nothing downloaded yet): takes
+	 * it out of Radarr / Sonarr and removes its request from Seerr, so nothing keeps
+	 * looking for it. Files already on the server are left alone.
+	 */
+	suspend fun removeRequest(seerr: NovaSeerr.Config, result: NovaSeerr.SearchResult): Outcome = withContext(Dispatchers.IO) {
+		try {
+			val services = runCatching { NovaArr.services(seerr) }.getOrNull()
+			val seerrHeaders = mapOf("X-Api-Key" to seerr.apiKey)
+			val details = runCatching {
+				NovaSeerr.json.parseToJsonElement(
+					NovaSeerr.http("${seerr.baseUrl}/api/v1/${result.type.apiName}/${result.tmdbId}", headers = seerrHeaders)
+				) as? JsonObject
+			}.getOrNull()
+
+			when (result.type) {
+				NovaSeerr.MediaType.MOVIE -> services?.radarr?.let { radarr ->
+					val headers = mapOf("X-Api-Key" to radarr.apiKey)
+					val movie = (NovaSeerr.json.parseToJsonElement(
+						NovaSeerr.http("${radarr.baseUrl}/api/v3/movie?tmdbId=${result.tmdbId}", headers = headers)
+					) as? JsonArray).orEmpty().firstOrNull() as? JsonObject
+					val id = (movie?.get("id") as? JsonPrimitive)?.intOrNull ?: return@let
+					NovaArr.removeTorrents(services, downloadIds(radarr.baseUrl, headers, "history/movie?movieId=$id"))
+					NovaSeerr.http(
+						"${radarr.baseUrl}/api/v3/movie/$id?deleteFiles=false&addImportExclusion=false",
+						method = "DELETE",
+						headers = headers,
+					)
+				}
+				NovaSeerr.MediaType.TV -> services?.sonarr?.let { sonarr ->
+					val tvdb = ((details?.get("externalIds") as? JsonObject)?.get("tvdbId") as? JsonPrimitive)?.intOrNull
+						?: return@let
+					val headers = mapOf("X-Api-Key" to sonarr.apiKey)
+					val series = (NovaSeerr.json.parseToJsonElement(
+						NovaSeerr.http("${sonarr.baseUrl}/api/v3/series?tvdbId=$tvdb", headers = headers)
+					) as? JsonArray).orEmpty().firstOrNull() as? JsonObject
+					val id = (series?.get("id") as? JsonPrimitive)?.intOrNull ?: return@let
+					NovaSeerr.http(
+						"${sonarr.baseUrl}/api/v3/series/$id?deleteFiles=false&addImportListExclusion=false",
+						method = "DELETE",
+						headers = headers,
+					)
+				}
+			}
+
+			// Its request in Seerr goes too, so it can be asked for again later.
+			val mediaId = ((details?.get("mediaInfo") as? JsonObject)?.get("id") as? JsonPrimitive)?.intOrNull
+			if (mediaId != null) {
+				NovaSeerr.http("${seerr.baseUrl}/api/v1/media/$mediaId", method = "DELETE", headers = seerrHeaders)
+			}
+			Outcome.Deleted
+		} catch (cancelled: CancellationException) {
+			throw cancelled
+		} catch (error: Exception) {
+			Timber.w(error, "NOVA: remove request failed for %s", result.title)
+			Outcome.Failed("Couldn't remove it. Check the server is on and try again.")
+		}
+	}
+
 	suspend fun delete(api: ApiClient, item: BaseItemDto): Outcome = withContext(Dispatchers.IO) {
 		try {
 			val full = NovaSeerr.fullItem(api, item)

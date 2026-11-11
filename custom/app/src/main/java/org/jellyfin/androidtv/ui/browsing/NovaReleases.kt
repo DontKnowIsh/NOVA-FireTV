@@ -38,7 +38,7 @@ object NovaReleases {
 		val languages: List<String>,
 		val ageHours: Double?,
 		val rejections: List<String>,
-		/** TV: "Season pack" or "Episode 3" etc. */
+		/** TV: "Whole season" or "Episode 3" etc. */
 		val coverage: String?,
 		/** Radarr / Sonarr Custom Format score (e.g. +100 for a preferred release group). */
 		val formatScore: Int = 0,
@@ -68,7 +68,7 @@ object NovaReleases {
 					?: radarr.rootFolder
 					?: firstRootFolder(radarr)
 					?: error("Radarr has no root folder")
-				val profile = radarr.profileId ?: firstProfile(radarr) ?: error("Radarr has no quality profile")
+				val profile = usableProfile(radarr) ?: error("Radarr has no quality profile")
 				val body = JsonObject(
 					lookup + mapOf(
 						"qualityProfileId" to JsonPrimitive(profile),
@@ -87,7 +87,37 @@ object NovaReleases {
 				added?.int("id") ?: error("Radarr didn't add the film")
 			}
 			Target(NovaArr.Kind.MOVIE, id, null)
-		}.onFailure { Timber.w(it, "NOVA: couldn't prepare film %d for choosing a copy", tmdbId) }.getOrNull()
+		}.onFailure {
+			Timber.w(it, "NOVA: couldn't prepare film %d for choosing a copy", tmdbId)
+			lastError = reasonFrom(it)
+		}.getOrNull()
+	}
+
+	/** Why the last prepareMovie / prepareSeason failed, in a few words (shown to you). */
+	@Volatile
+	var lastError: String? = null
+		private set
+
+	/** Sonarr / Radarr's own reason from an error, e.g. "Root folder '/tv' does not exist". */
+	private fun reasonFrom(error: Throwable): String {
+		val text = error.message.orEmpty()
+		val body = text.substringAfter(": ", "")
+		val fromArr = runCatching {
+			when (val parsed = NovaSeerr.json.parseToJsonElement(body)) {
+				is JsonArray -> parsed.mapNotNull { ((it as? JsonObject)?.get("errorMessage") as? JsonPrimitive)?.content }
+					.distinct().joinToString(". ")
+				is JsonObject -> ((parsed["message"] ?: parsed["errorMessage"]) as? JsonPrimitive)?.content.orEmpty()
+				else -> ""
+			}
+		}.getOrDefault("")
+		// Even a cut-off reply usually still has Sonarr / Radarr's "errorMessage" in it.
+		val quoted = Regex("\"errorMessage\"\\s*:\\s*\"([^\"]+)\"").findAll(body).map { it.groupValues[1] }.distinct().joinToString(". ")
+		return fromArr.ifBlank { quoted }.ifBlank {
+			when {
+				text.startsWith("HTTP ") -> text.substringBefore(" from ")
+				else -> text
+			}
+		}.take(160)
 	}
 
 	/** Adds the show to Sonarr if needed (no automatic search), monitors [season], returns where to search. */
@@ -118,7 +148,7 @@ object NovaReleases {
 				val lookup = (parse(NovaSeerr.http("${sonarr.baseUrl}/api/v3/series/lookup?term=tvdb%3A$tvdbId", headers = headers)) as? JsonArray)
 					.orEmpty().firstOrNull() as? JsonObject ?: error("Sonarr couldn't find this show")
 				val folder = sonarr.rootFolder ?: firstRootFolder(sonarr) ?: error("Sonarr has no root folder")
-				val profile = sonarr.profileId ?: firstProfile(sonarr) ?: error("Sonarr has no quality profile")
+				val profile = usableProfile(sonarr) ?: error("Sonarr has no quality profile")
 				val seasons = (lookup["seasons"] as? JsonArray).orEmpty().map { s ->
 					val obj = s as? JsonObject ?: return@map s
 					JsonObject(obj + ("monitored" to JsonPrimitive(obj.int("seasonNumber") == season)))
@@ -138,10 +168,24 @@ object NovaReleases {
 				val added = parse(
 					NovaSeerr.http("${sonarr.baseUrl}/api/v3/series", method = "POST", headers = headers, body = JsonObject(lookup + extra).toString())
 				) as? JsonObject
-				added?.int("id") ?: error("Sonarr didn't add the show")
+				val newId = added?.int("id") ?: error("Sonarr didn't add the show")
+				// A newly added show has no episodes until Sonarr has fetched them, and a
+				// search before then finds nothing. Wait for them (up to ~30 s).
+				for (attempt in 1..30) {
+					val episodes = runCatching {
+						(parse(NovaSeerr.http("${sonarr.baseUrl}/api/v3/episode?seriesId=$newId", headers = headers)) as? JsonArray)
+							.orEmpty().count { (it as? JsonObject)?.int("seasonNumber") == season }
+					}.getOrDefault(0)
+					if (episodes > 0) break
+					kotlinx.coroutines.delay(1_000L)
+				}
+				newId
 			}
 			Target(NovaArr.Kind.TV, id, season)
-		}.onFailure { Timber.w(it, "NOVA: couldn't prepare %d season %d for choosing a copy", tmdbId, season) }.getOrNull()
+		}.onFailure {
+			Timber.w(it, "NOVA: couldn't prepare %d season %d for choosing a copy", tmdbId, season)
+			lastError = reasonFrom(it)
+		}.getOrNull()
 	}
 
 	/** Every copy the indexers have, best first (allowed, preferred groups, then most seeders). Null on failure. */
@@ -162,6 +206,8 @@ object NovaReleases {
 				.sortedWith(
 					// Allowed first, then your preferred groups (Custom Format score), then most seeders.
 					compareBy<Release> { it.rejected }
+						// TV: whole seasons before single episodes.
+						.thenBy { if (it.coverage == "Whole season") 0 else 1 }
 						.thenByDescending { it.formatScore }
 						.thenByDescending { it.seeders ?: -1 }
 						.thenByDescending { it.sizeBytes }
@@ -206,7 +252,8 @@ object NovaReleases {
 		val isTorrent = obj.str("protocol").equals("torrent", ignoreCase = true)
 		val episodes = (obj["episodeNumbers"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.intOrNull }
 		val coverage = when {
-			obj["fullSeason"]?.let { (it as? JsonPrimitive)?.booleanOrNull } == true -> "Season pack"
+			rejections.any { it.contains("Multi-season", ignoreCase = true) } -> "All seasons (Sonarr can't use)"
+			obj["fullSeason"]?.let { (it as? JsonPrimitive)?.booleanOrNull } == true -> "Whole season"
 			episodes.size == 1 -> "Episode ${episodes.first()}"
 			episodes.size > 1 -> "Episodes ${episodes.first()}–${episodes.last()}"
 			else -> null
@@ -234,10 +281,20 @@ object NovaReleases {
 			.orEmpty().firstNotNullOfOrNull { (it as? JsonObject)?.str("path") }
 	}.getOrNull()
 
-	private fun firstProfile(service: NovaArr.Service): Int? = runCatching {
+	private fun profileIds(service: NovaArr.Service): List<Int> = runCatching {
 		(parse(NovaSeerr.http("${service.baseUrl}/api/v3/qualityprofile", headers = mapOf("X-Api-Key" to service.apiKey))) as? JsonArray)
-			.orEmpty().firstNotNullOfOrNull { (it as? JsonObject)?.int("id") }
-	}.getOrNull()
+			.orEmpty().mapNotNull { (it as? JsonObject)?.int("id") }
+	}.getOrDefault(emptyList())
+
+	/**
+	 * The quality profile Seerr is set to use, if it still exists in Radarr / Sonarr;
+	 * otherwise the first one that does (a profile removed in Radarr / Sonarr but
+	 * still chosen in Seerr made adding fail with "Quality Profile does not exist").
+	 */
+	private fun usableProfile(service: NovaArr.Service): Int? {
+		val existing = profileIds(service)
+		return service.profileId?.takeIf { it in existing } ?: existing.firstOrNull() ?: service.profileId
+	}
 
 	private fun parse(body: String): JsonElement = NovaSeerr.json.parseToJsonElement(body)
 
