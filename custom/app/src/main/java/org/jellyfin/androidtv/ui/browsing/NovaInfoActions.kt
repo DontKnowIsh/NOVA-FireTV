@@ -56,6 +56,20 @@ fun NovaInfoActions(item: BaseItemDto, firstFocus: FocusRequester) {
 	val context = LocalContext.current
 	val scope = rememberCoroutineScope()
 	var isDiscover by remember(item.id) { mutableStateOf<Boolean?>(null) }
+	val playbackLauncher = koinInject<org.jellyfin.androidtv.ui.playback.PlaybackLauncher>()
+	var trailer by remember(item.id) { mutableStateOf<BaseItemDto?>(null) }
+	// CC only shows on titles that have no subtitles yet.
+	var hasSubs by remember(item.id) { mutableStateOf<Boolean?>(null) }
+	// After a subtitle download the CC button goes, so put the cursor on Play.
+	var focusPlayLater by remember { mutableStateOf(false) }
+	LaunchedEffect(focusPlayLater) {
+		if (!focusPlayLater) return@LaunchedEffect
+		kotlinx.coroutines.delay(150)
+		runCatching { firstFocus.requestFocus() }
+		focusPlayLater = false
+	}
+	LaunchedEffect(item.id) { hasSubs = org.jellyfin.androidtv.ui.NovaSubtitles.hasSubtitles(item) }
+	LaunchedEffect(item.id) { trailer = org.jellyfin.androidtv.ui.home.novaSavedTrailer(api, item) }
 	var favourite by remember(item.id) { mutableStateOf(item.userData?.isFavorite == true) }
 
 	LaunchedEffect(item.id) {
@@ -180,6 +194,37 @@ fun NovaInfoActions(item: BaseItemDto, firstFocus: FocusRequester) {
 					contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
 				) { Text("Seasons", fontSize = 14.sp, fontWeight = FontWeight.Bold) }
 			}
+
+			// 🎞 Trailer: the trailer saved on the server (from Trailarr), full screen.
+			trailer?.let { savedTrailer ->
+				Button(
+					onClick = { playbackLauncher.launch(context, listOf(savedTrailer)) },
+					shape = RoundedCornerShape(nova.corner(5)),
+					colors = ButtonDefaults.colors(
+						containerColor = nova.surfaceHigh.withAlpha(0xAA),
+						contentColor = Color.White,
+						focusedContainerColor = nova.accent,
+						focusedContentColor = nova.onAccent,
+					),
+					contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+				) { Text("🎞  Trailer", fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+			}
+
+			// Subtitles: search online (Open Subtitles plugin) and add one.
+			if (!isShow && hasSubs == false) Button(
+				onClick = {
+					(context as? android.app.Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity)
+						?.let { org.jellyfin.androidtv.ui.NovaSubtitles.show(it, item, onAdded = { hasSubs = true; focusPlayLater = true }) }
+				},
+				shape = RoundedCornerShape(nova.corner(5)),
+				colors = ButtonDefaults.colors(
+					containerColor = nova.surfaceHigh.withAlpha(0xAA),
+					contentColor = Color.White,
+					focusedContainerColor = nova.accent,
+					focusedContentColor = nova.onAccent,
+				),
+				contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+			) { Text("CC", fontSize = 14.sp, fontWeight = FontWeight.Bold) }
 
 			// Favourite: just a heart (filled when it's a favourite).
 			Button(

@@ -118,3 +118,18 @@ class NovaWakeService : Service() {
 		const val NOTIFICATION_ID = 7417
 	}
 }
+
+/** Small facts about this Fire TV shown in Settings. */
+object NovaDeviceInfo {
+	/** This Fire TV's address on the home network (e.g. 192.168.x.x), for adb. */
+	fun ipAddress(): String? = runCatching {
+		java.net.NetworkInterface.getNetworkInterfaces().toList()
+			.filter { it.isUp && !it.isLoopback }
+			// Wi-Fi / Ethernet before anything else (VPNs etc.).
+			.sortedBy { if (it.name.startsWith("wlan") || it.name.startsWith("eth")) 0 else 1 }
+			.flatMap { it.inetAddresses.toList() }
+			.filterIsInstance<java.net.Inet4Address>()
+			.firstOrNull { it.isSiteLocalAddress }
+			?.hostAddress
+	}.getOrNull()
+}

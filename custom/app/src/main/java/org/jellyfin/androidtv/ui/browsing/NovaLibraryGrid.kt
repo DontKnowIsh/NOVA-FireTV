@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -30,6 +31,9 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -56,8 +60,10 @@ import org.jellyfin.androidtv.ui.base.Text
 import org.jellyfin.androidtv.ui.composable.AsyncImage
 import org.jellyfin.androidtv.ui.home.HomeHeroStateStore
 import org.jellyfin.androidtv.ui.nova
+import org.jellyfin.androidtv.ui.withAlpha
 import org.jellyfin.androidtv.util.apiclient.getUrl
 import org.jellyfin.androidtv.util.apiclient.itemImages
+import org.jellyfin.androidtv.util.apiclient.itemBackdropImages
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.artistsApi
 import org.jellyfin.sdk.api.client.extensions.itemsApi
@@ -257,6 +263,7 @@ internal fun NovaLibraryGrid(
 	onLeft: () -> Unit,
 	onClick: (BaseItemDto) -> Unit,
 	modifier: Modifier = Modifier,
+	footer: (@Composable () -> Unit)? = null,
 ) {
 	LaunchedEffect(state) { state.ensureLoaded(0) }
 
@@ -264,6 +271,19 @@ internal fun NovaLibraryGrid(
 	LaunchedEffect(state) {
 		snapshotFlow { state.focusedIndex to state.items.size }.collect { (index, size) ->
 			if (size > 0 && index >= size - 30) state.ensureLoaded(size)
+		}
+	}
+
+	// Keep the row you're on at the top of the posters: the row above slides
+	// fully out of view instead of hanging half-cut under the preview.
+	LaunchedEffect(state) {
+		snapshotFlow { state.focusedIndex }.collect { index ->
+			if (!state.hasFocus || index < 0 || index >= state.items.size) return@collect
+			val info = state.gridState.layoutInfo.visibleItemsInfo
+			val row = info.firstOrNull { it.index == index }?.row
+			val topRow = info.firstOrNull()?.row
+			if (row != null && row == topRow && state.gridState.firstVisibleItemScrollOffset == 0) return@collect
+			runCatching { state.gridState.animateScrollToItem(index) }
 		}
 	}
 
@@ -314,6 +334,8 @@ internal fun NovaLibraryGrid(
 					modifier = if (index == state.focusedIndex) Modifier.focusRequester(state.itemFocus) else Modifier,
 				)
 			}
+			// Collections: a panel under the posters (years, total time, watched, play in order).
+			if (footer != null) item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) { footer() }
 		}
 	}
 }
@@ -391,5 +413,63 @@ private fun NovaGridPoster(
 				Text("NEW", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
 			}
 		}
+	}
+}
+
+
+/**
+ * Behind a collection's posters: the collection's own picture, showing just its
+ * lower part and fading up into the page, so the space under a short row of
+ * posters isn't plain black.
+ */
+@Composable
+internal fun NovaCollectionBackdrop(collection: BaseItemDto, items: List<BaseItemDto>, api: org.jellyfin.sdk.api.client.ApiClient, modifier: Modifier = Modifier) {
+	// Prefer a wide picture; otherwise a poster (tall, so mostly its bottom shows).
+	val backdrop = collection.itemBackdropImages.firstOrNull()
+		?: items.firstNotNullOfOrNull { it.itemBackdropImages.firstOrNull() }
+	val poster = collection.itemImages[org.jellyfin.sdk.model.api.ImageType.PRIMARY]
+	val image = backdrop ?: poster ?: return
+	val ratio = if (backdrop != null) 16f / 9f else 2f / 3f
+	androidx.compose.foundation.layout.BoxWithConstraints(
+		modifier = modifier
+			.fillMaxWidth()
+			.height(330.dp)
+			.clipToBounds()
+	) {
+		AsyncImage(
+			url = image.getUrl(api, maxWidth = 1280),
+			blurHash = image.blurHash,
+			scaleType = ImageView.ScaleType.CENTER_CROP,
+			modifier = Modifier
+				.align(Alignment.BottomCenter)
+				.fillMaxWidth()
+				.requiredHeight(maxWidth / ratio)
+				.alpha(0.55f),
+		)
+		// Fade into the page at the top and left, and darken a little overall so
+		// the posters stay the main thing.
+		Box(
+			modifier = Modifier
+				.fillMaxSize()
+				.background(
+					androidx.compose.ui.graphics.Brush.verticalGradient(
+						0.0f to nova.bg,
+						0.35f to nova.bg.withAlpha(0xB0),
+						0.7f to nova.bg.withAlpha(0x55),
+						1.0f to nova.bg.withAlpha(0x88),
+					)
+				)
+		)
+		Box(
+			modifier = Modifier
+				.fillMaxSize()
+				.background(
+					androidx.compose.ui.graphics.Brush.horizontalGradient(
+						0.0f to nova.bg,
+						0.18f to nova.bg.withAlpha(0x99),
+						0.4f to Color.Transparent,
+					)
+				)
+		)
 	}
 }

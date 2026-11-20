@@ -94,7 +94,15 @@ fun NovaCastRow(item: BaseItemDto, modifier: Modifier = Modifier) {
 
 	// OK on a cast member: their other films and shows.
 	var openPerson by remember(item.id) { mutableStateOf<NovaSeerr.CastMember?>(null) }
-	openPerson?.let { member -> NovaPersonDialog(member, onDismiss = { openPerson = null }) }
+	val castContext = androidx.compose.ui.platform.LocalContext.current
+	LaunchedEffect(openPerson) {
+		val member = openPerson ?: return@LaunchedEffect
+		// Over the page in the same window, so trailers can play in its pop-ups.
+		org.jellyfin.androidtv.ui.NovaOverlay.show(castContext) { close ->
+			NovaPersonDialog(member, onDismiss = { close() })
+		}
+		openPerson = null
+	}
 
 	Column(modifier = modifier) {
 		Text("Cast", color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Bold)

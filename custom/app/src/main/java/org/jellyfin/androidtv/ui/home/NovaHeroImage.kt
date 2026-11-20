@@ -9,5 +9,7 @@ import org.jellyfin.sdk.model.api.ImageType
 
 /** Prefer composed landscape artwork, falling back for titles without a thumb. */
 internal val BaseItemDto.novaHeroImage
-    get() = itemImages[ImageType.THUMB] ?: parentImages[ImageType.THUMB]
-        ?: itemBackdropImages.firstOrNull() ?: parentBackdropImages.firstOrNull()
+    // Backdrop first: a clean scene with no title text on it (NOVA shows the logo
+    // and title itself). Thumb only when there is no backdrop.
+    get() = itemBackdropImages.firstOrNull() ?: parentBackdropImages.firstOrNull()
+        ?: itemImages[ImageType.THUMB] ?: parentImages[ImageType.THUMB]

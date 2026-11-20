@@ -51,6 +51,7 @@ import org.jellyfin.androidtv.ui.base.button.ButtonDefaults
 import org.jellyfin.androidtv.ui.composable.AsyncImage
 import org.jellyfin.androidtv.ui.home.HomePreviewPlayer
 import org.jellyfin.androidtv.ui.home.rememberSelectedHomePreview
+import org.jellyfin.androidtv.ui.home.novaSavedTrailer
 import org.jellyfin.androidtv.ui.playback.PlaybackLauncher
 import org.jellyfin.androidtv.util.PlaybackHelper
 import org.jellyfin.androidtv.util.apiclient.Response
@@ -119,6 +120,11 @@ class NovaItemFragment : Fragment(), android.view.View.OnKeyListener {
 		val context = LocalContext.current
 
 		val preview = rememberSelectedHomePreview(item)
+		var trailer by remember(item.id) { mutableStateOf<BaseItemDto?>(null) }
+		LaunchedEffect(item.id) { trailer = novaSavedTrailer(api, item) }
+		var hasSubs by remember(item.id) { mutableStateOf<Boolean?>(null) }
+		var focusPlayLater by remember { mutableStateOf(false) }
+		LaunchedEffect(item.id) { hasSubs = org.jellyfin.androidtv.ui.NovaSubtitles.hasSubtitles(item) }
 		var previewFinished by remember(item.id) { mutableStateOf(false) }
 		var videoPlaying by remember { mutableStateOf(false) }
 		val overlayAlpha by animateFloatAsState(
@@ -127,6 +133,12 @@ class NovaItemFragment : Fragment(), android.view.View.OnKeyListener {
 			label = "itemHeroOverlayAlpha",
 		)
 		val playFocusRequester = remember { FocusRequester() }
+		LaunchedEffect(focusPlayLater) {
+			if (!focusPlayLater) return@LaunchedEffect
+			kotlinx.coroutines.delay(150)
+			runCatching { playFocusRequester.requestFocus() }
+			focusPlayLater = false
+		}
 		val railFocusRequester = remember { FocusRequester() }
 
 		val backdrop = remember(item.id) {
@@ -310,6 +322,38 @@ class NovaItemFragment : Fragment(), android.view.View.OnKeyListener {
 								contentPadding = PaddingValues(horizontal = 24.dp, vertical = 9.dp),
 							) {
 								Text("▶  Play", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+							}
+							trailer?.let { savedTrailer ->
+								Spacer(Modifier.width(10.dp))
+								Button(
+									onClick = { playbackLauncher.launch(context, listOf(savedTrailer)) },
+									shape = RoundedCornerShape(nova.corner(5)),
+									colors = ButtonDefaults.colors(
+										containerColor = nova.surface,
+										contentColor = nova.textPrimary,
+										focusedContainerColor = nova.accent,
+										focusedContentColor = nova.onAccent,
+									),
+									contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp),
+								) {
+									Text("🎞  Trailer", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+								}
+							}
+							if (hasSubs == false && (item.type == BaseItemKind.MOVIE || item.type == BaseItemKind.EPISODE || item.type == BaseItemKind.VIDEO)) {
+								Spacer(Modifier.width(10.dp))
+								Button(
+									onClick = { activity?.let { org.jellyfin.androidtv.ui.NovaSubtitles.show(it, item, onAdded = { hasSubs = true; focusPlayLater = true }) } },
+									shape = RoundedCornerShape(nova.corner(5)),
+									colors = ButtonDefaults.colors(
+										containerColor = nova.surface,
+										contentColor = nova.textPrimary,
+										focusedContainerColor = nova.accent,
+										focusedContentColor = nova.onAccent,
+									),
+									contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp),
+								) {
+									Text("CC", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+								}
 							}
 							Spacer(Modifier.width(10.dp))
 							NovaActionButton(item = item)

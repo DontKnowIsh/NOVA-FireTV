@@ -172,7 +172,7 @@ class HomeFragment : Fragment() {
 					// of being cropped into a thin strip; the left side fades into the page.
 					modifier = Modifier
 						.align(Alignment.TopEnd)
-						.height(284.dp)
+						.height(334.dp)
 						.aspectRatio(16f / 9f, matchHeightConstraintsFirst = true)
 						.clipToBounds()
 				) {
@@ -269,7 +269,7 @@ class HomeFragment : Fragment() {
 					modifier = Modifier
 						.padding(start = 150.dp)
 						.width(54.dp)
-						.height(258.dp)
+						.height(308.dp)
 						.background(
 							Brush.horizontalGradient(
 								0.0f to nova.bgDeep.withAlpha(0xFC),
@@ -298,7 +298,7 @@ class HomeFragment : Fragment() {
 						Box(
 							modifier = Modifier
 								.fillMaxWidth()
-								.height(250.dp)
+								.height(300.dp)
 						) {
 							if (heroOverlayAlpha > 0.01f) {
 								Column(
@@ -364,13 +364,16 @@ class HomeFragment : Fragment() {
 
 								Spacer(Modifier.height(10.dp))
 
+								// Narrower, over more lines: fills the space underneath instead
+								// of covering the picture.
 								Text(
 									text = displayOverview,
 									color = nova.textPrimary,
 									fontSize = 15.sp,
-									maxLines = 2,
+									maxLines = 4,
 									overflow = TextOverflow.Ellipsis,
 									lineHeight = 20.sp,
+									modifier = Modifier.fillMaxWidth(0.62f),
 								)
 
 								}

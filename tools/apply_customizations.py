@@ -563,6 +563,13 @@ key_replacement = """	override fun onViewCreated(view: View, savedInstanceState:
 		super.onViewCreated(view, savedInstanceState)
 
 		verticalGridView.setOnKeyInterceptListener(::handleNavigation)
+		// NOVA: keep the row you're on at the top, so the row above slides fully
+		// out of view rather than hanging half-cut under the big preview.
+		verticalGridView.windowAlignment = androidx.leanback.widget.BaseGridView.WINDOW_ALIGN_NO_EDGE
+		verticalGridView.windowAlignmentOffsetPercent = 0f
+		verticalGridView.windowAlignmentOffset = 0
+		verticalGridView.itemAlignmentOffsetPercent = 0f
+		verticalGridView.itemAlignmentOffset = 0
 	}
 
 	fun handleNavigation(event: KeyEvent): Boolean {

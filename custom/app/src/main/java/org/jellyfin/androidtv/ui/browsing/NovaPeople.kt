@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -42,8 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import coil3.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -195,16 +194,45 @@ fun NovaPersonDialog(member: NovaSeerr.CastMember, onDismiss: () -> Unit) {
 		runCatching { firstFocus.requestFocus() }
 	}
 
+	// Not in the library yet: the same pop-up as the Download page (trailer,
+	// description, Download). In the library: its More Info page.
+	var previewFor by remember { mutableStateOf<NovaPeople.Credit?>(null) }
+	var seasonsFor by remember { mutableStateOf<NovaPeople.Credit?>(null) }
+	val requested = remember { androidx.compose.runtime.mutableStateMapOf<String, NovaSeerr.Status>() }
+	val cardFocus = remember { mutableMapOf<String, FocusRequester>() }
+	var returnTo by remember { mutableStateOf<String?>(null) }
+	val context = androidx.compose.ui.platform.LocalContext.current
+	fun keyOf(credit: NovaPeople.Credit) = "${credit.type}-${credit.tmdbId}"
+	fun statusOf(credit: NovaPeople.Credit) = requested[keyOf(credit)] ?: credit.status
+	fun resultOf(credit: NovaPeople.Credit) = NovaSeerr.SearchResult(
+		tmdbId = credit.tmdbId, type = credit.type, title = credit.title, year = credit.year,
+		posterUrl = credit.posterUrl, status = statusOf(credit),
+	)
 	fun open(credit: NovaPeople.Credit) {
 		val cfg = config ?: return
+		if (!credit.owned) {
+			returnTo = keyOf(credit)
+			previewFor = credit
+			return
+		}
 		scope.launch {
 			val target = NovaPeople.itemFor(api, cfg, credit)
 			onDismiss()
 			navigationRepository.navigate(Destinations.novaInfo(target))
 		}
 	}
+	// Back on the card the pop-up was opened from.
+	LaunchedEffect(previewFor, seasonsFor) {
+		if (previewFor != null || seasonsFor != null) return@LaunchedEffect
+		val key = returnTo ?: return@LaunchedEffect
+		repeat(10) {
+			androidx.compose.runtime.withFrameNanos { }
+			if (runCatching { cardFocus[key]?.requestFocus() }.isSuccess) return@LaunchedEffect
+		}
+	}
+	androidx.activity.compose.BackHandler(enabled = previewFor == null && seasonsFor == null, onBack = onDismiss)
 
-	Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+	run {
 		Box(modifier = Modifier.fillMaxSize().background(nova.bg)) {
 			LazyColumn(contentPadding = PaddingValues(start = 48.dp, top = 32.dp, bottom = 32.dp)) {
 				item {
@@ -241,34 +269,107 @@ fun NovaPersonDialog(member: NovaSeerr.CastMember, onDismiss: () -> Unit) {
 						fun focusFor(index: Int): FocusRequester? =
 							if (!focusGiven && index == 0) { focusGiven = true; firstFocus } else null
 						if (owned.isNotEmpty()) item {
-							CreditRow("In your library", owned, focusFor(0), ::open)
+							CreditRow("In your library", owned, focusFor(0), cardFocus, ::open)
 						}
 						val films = rest.filter { it.type == NovaSeerr.MediaType.MOVIE }
 						val shows = rest.filter { it.type == NovaSeerr.MediaType.TV }
-						if (films.isNotEmpty()) item { CreditRow("Films you can download", films, focusFor(0), ::open) }
-						if (shows.isNotEmpty()) item { CreditRow("Shows you can download", shows, focusFor(0), ::open) }
+						if (films.isNotEmpty()) item { CreditRow("Films you can download", films, focusFor(0), cardFocus, ::open) }
+						if (shows.isNotEmpty()) item { CreditRow("Shows you can download", shows, focusFor(0), cardFocus, ::open) }
 					}
 				}
+			}
+
+			val preview = previewFor
+			val cfg = config
+			if (preview != null && cfg != null) {
+				NovaDownloadPreview(
+					config = cfg,
+					result = resultOf(preview),
+					status = statusOf(preview),
+					onDownload = {
+						previewFor = null
+						if (preview.type == NovaSeerr.MediaType.TV) {
+							seasonsFor = preview
+						} else scope.launch {
+							val ok = runCatching { NovaSeerr.request(cfg, preview.type, preview.tmdbId) }.isSuccess
+							NovaSeerr.status(cfg, preview.type, preview.tmdbId)?.let { requested[keyOf(preview)] = it }
+							(context as? android.app.Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity)?.let {
+								org.jellyfin.androidtv.ui.NovaToast.show(
+									it,
+									if (ok) "Downloading ${preview.title}" else "Couldn't request ${preview.title}",
+									error = !ok,
+								)
+							}
+						}
+					},
+					onDismiss = { previewFor = null },
+				)
+			}
+			val seasons = seasonsFor
+			if (seasons != null && cfg != null) {
+				NovaSeasonPicker(
+					config = cfg,
+					tmdbId = seasons.tmdbId,
+					title = seasons.title,
+					onDismiss = { seasonsFor = null },
+					onRequested = { ok ->
+						seasonsFor = null
+						scope.launch {
+							NovaSeerr.status(cfg, seasons.type, seasons.tmdbId)?.let { requested[keyOf(seasons)] = it }
+						}
+						(context as? android.app.Activity ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity)?.let {
+							org.jellyfin.androidtv.ui.NovaToast.show(
+								it,
+								if (ok) "Downloading ${seasons.title}" else "Couldn't request ${seasons.title}",
+								error = !ok,
+							)
+						}
+					},
+				)
 			}
 		}
 	}
 }
 
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 private fun CreditRow(
 	title: String,
 	credits: List<NovaPeople.Credit>,
 	firstFocus: FocusRequester?,
+	cardFocus: MutableMap<String, FocusRequester>,
 	onClick: (NovaPeople.Credit) -> Unit,
 ) {
+	// Coming into a row from above or below always lands on its first card.
+	val rowStart = remember { FocusRequester() }
+	val rowState = androidx.compose.foundation.lazy.rememberLazyListState()
+	val rowScope = rememberCoroutineScope()
 	Column {
 		Text(title, color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Bold)
 		Spacer(Modifier.height(8.dp))
-		LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(end = 48.dp)) {
+		LazyRow(
+			state = rowState,
+			horizontalArrangement = Arrangement.spacedBy(12.dp),
+			contentPadding = PaddingValues(end = 48.dp),
+			modifier = Modifier.focusProperties {
+				@Suppress("DEPRECATION")
+				enter = { direction ->
+					if (direction == androidx.compose.ui.focus.FocusDirection.Up || direction == androidx.compose.ui.focus.FocusDirection.Down) {
+						if (rowState.firstVisibleItemIndex != 0) rowScope.launch { rowState.scrollToItem(0) }
+						rowStart
+					} else FocusRequester.Default
+				}
+			},
+		) {
 			itemsIndexed(credits, key = { _, c -> "${c.type}-${c.tmdbId}" }) { index, credit ->
+				val own = remember(credit) { FocusRequester() }
+				cardFocus["${credit.type}-${credit.tmdbId}"] = own
+				var cardModifier = Modifier.focusRequester(own)
+				if (index == 0) cardModifier = cardModifier.focusRequester(rowStart)
+				if (index == 0 && firstFocus != null) cardModifier = cardModifier.focusRequester(firstFocus)
 				CreditCard(
 					credit,
-					modifier = if (index == 0 && firstFocus != null) Modifier.focusRequester(firstFocus) else Modifier,
+					modifier = cardModifier,
 					onClick = { onClick(credit) },
 				)
 			}

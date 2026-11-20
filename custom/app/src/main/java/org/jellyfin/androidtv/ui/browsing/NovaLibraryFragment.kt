@@ -317,6 +317,12 @@ class NovaLibraryFragment : Fragment() {
 					.fillMaxSize()
 					.background(nova.bg)
 			) {
+				if (isCollection && grid != null) NovaCollectionBackdrop(
+					collection = currentFolder,
+					items = grid.items,
+					api = api,
+					modifier = Modifier.align(Alignment.BottomCenter),
+				)
 				Box(
 					// The preview spreads across most of the screen on the right; it keeps
 					// its 16:9 shape and just has its top and bottom trimmed, so more of the
@@ -325,7 +331,7 @@ class NovaLibraryFragment : Fragment() {
 						.align(Alignment.TopEnd)
 						.fillMaxWidth(0.66f)
 						// Over a grid it ends (fully faded) just above the posters, so no edge shows behind them.
-						.height(if (grid != null) 236.dp else 300.dp)
+						.height(if (grid != null) 296.dp else 300.dp)
 						.clipToBounds()
 				) {
 					androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -333,7 +339,9 @@ class NovaLibraryFragment : Fragment() {
 							modifier = Modifier
 								.fillMaxWidth()
 								.requiredHeight(maxWidth * 9f / 16f)
-								.align(Alignment.Center),
+								// Trim more from the bottom than the top: faces sit in the
+								// upper part of most stills and trailers.
+								.align(androidx.compose.ui.BiasAlignment(0f, -0.6f)),
 						) {
 							if (selectedBackdrop != null) {
 								HomeHeroArtwork(
@@ -416,7 +424,7 @@ class NovaLibraryFragment : Fragment() {
 					modifier = Modifier
 						.padding(start = 150.dp)
 						.width(54.dp)
-						.height(if (grid != null) 236.dp else 258.dp)
+						.height(if (grid != null) 296.dp else 258.dp)
 						.background(
 							Brush.horizontalGradient(
 								0.0f to nova.bgDeep.withAlpha(0xFC),
@@ -441,8 +449,8 @@ class NovaLibraryFragment : Fragment() {
 					)
 
 					Column(modifier = Modifier.fillMaxSize().clipToBounds()) {
-						// A little shorter over the grid, so two rows of posters fit underneath.
-						Box(modifier = Modifier.fillMaxWidth().height(if (grid != null) 200.dp else 250.dp)) {
+						// Over the grid: a big preview, with the row you're on just underneath.
+						Box(modifier = Modifier.fillMaxWidth().height(if (grid != null) 260.dp else 250.dp)) {
 							if (heroOverlayAlpha > 0.01f) {
 								Column(
 									modifier = Modifier
@@ -485,8 +493,16 @@ class NovaLibraryFragment : Fragment() {
 										org.jellyfin.androidtv.ui.browsing.NovaLengthInfo(displayItem)
 									}
 									Spacer(Modifier.height(10.dp))
-									Box(modifier = Modifier.height(40.dp)) {
-										Text(displayOverview, color = nova.textPrimary, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 20.sp)
+									// Libraries: a narrower description that runs onto more lines, filling
+									// the space underneath instead of covering the picture. Discover keeps
+									// two wide lines (its More Info button sits below).
+									val shortText = !isDiscoverLibrary
+									Box(
+										modifier = Modifier
+											.fillMaxWidth(if (shortText) 0.62f else 1f)
+											.height(if (shortText) 80.dp else 40.dp)
+									) {
+										Text(displayOverview, color = nova.textPrimary, fontSize = 15.sp, maxLines = if (shortText) 4 else 2, overflow = TextOverflow.Ellipsis, lineHeight = 20.sp)
 									}
 
 									// Film, TV and other libraries: no buttons here; OK on a
@@ -611,7 +627,9 @@ class NovaLibraryFragment : Fragment() {
 							onLeft = { runCatching { railFocusRequester.requestFocus() } },
 							onClick = ::openGridItem,
 							// Solid behind the posters: the preview's edges stay up in the header.
-						modifier = Modifier.fillMaxSize().background(nova.bg),
+						// (Collections: see-through, so the collection's picture shows behind.)
+						modifier = Modifier.fillMaxSize().then(if (isCollection) Modifier else Modifier.background(nova.bg)),
+
 						) else AndroidFragment<NovaLibraryRowsFragment>(
 							modifier = Modifier
 

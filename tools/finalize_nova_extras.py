@@ -199,6 +199,13 @@ new = """		category {
 			}
 
 			action {
+				title = "This Fire TV's IP address"
+				content = org.jellyfin.androidtv.ui.NovaDeviceInfo.ipAddress()?.let { "$it  (for adb connect)" }
+					?: "Not connected to a network"
+				onActivate = {}
+			}
+
+			action {
 				title = "Master code"
 				content = "8-digit code that unlocks any PIN if you forget it"
 				onActivate = {

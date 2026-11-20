@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,9 +74,17 @@ data class HomePreview(
 	val item: BaseItemDto,
 	val playableItem: BaseItemDto,
 	val startPositionMs: Long,
-	/** Discover titles: play this YouTube trailer instead of JellyBridge's placeholder video. */
-	val trailerKey: String? = null,
+	/** True when this is the title's saved trailer (played all the way through). */
+	val isTrailer: Boolean = false,
 )
+
+/** How long the hero shows this preview: the whole trailer, or 30 seconds of a clip. */
+internal val HomePreview.playMs: Long
+	get() = if (isTrailer) {
+		((playableItem.runTimeTicks ?: 0L) / 10_000L).coerceIn(15_000L, 300_000L)
+	} else {
+		30_000L
+	}
 
 object HomePreviewPlaybackController {
 	private val suspendedState = MutableStateFlow(false)
@@ -257,25 +264,11 @@ private suspend fun getPlayablePreviewItem(
 	else -> null
 }
 
-/**
- * null when [item] is a normal library title; for a Discover placeholder the
- * YouTube id of its trailer, or "" when it has no trailer.
- */
-private suspend fun discoverTrailerKey(api: ApiClient, item: BaseItemDto): String? {
-	val config = NovaSeerr.config(api) ?: return null
-	val full = runCatching { NovaSeerr.fullItem(api, item) }.getOrNull() ?: return null
-	if (!NovaSeerr.isDiscoverPlaceholder(config, full)) return null
-	return trailerKeyFor(config, full)
-}
-
-/** YouTube id of a title's trailer (from Jellyfin or TMDB), or "" when it has none. */
-private suspend fun trailerKeyFor(config: NovaSeerr.Config, full: BaseItemDto): String {
-	full.remoteTrailers.orEmpty()
-		.firstNotNullOfOrNull { NovaSeerr.youTubeId(it.url) }
-		?.let { return it }
-	val type = NovaSeerr.mediaType(full) ?: return ""
-	val tmdb = NovaSeerr.tmdbId(full) ?: return ""
-	return NovaSeerr.trailerKey(config, type, tmdb).orEmpty()
+/** A JellyBridge Discover title (only a "favourite this to request it" placeholder video). */
+private suspend fun isDiscoverPlaceholder(api: ApiClient, item: BaseItemDto): Boolean {
+	val config = NovaSeerr.config(api) ?: return false
+	val full = runCatching { NovaSeerr.fullItem(api, item) }.getOrNull() ?: return false
+	return NovaSeerr.isDiscoverPlaceholder(config, full)
 }
 
 private suspend fun createHomePreviewForItem(
@@ -286,23 +279,42 @@ private suspend fun createHomePreviewForItem(
 ): HomePreview? {
 	val cacheKey = selectedItem.id.toString()
 	HomePreviewCache.get(cacheKey)?.let { cached ->
+		android.util.Log.i("NOVA", "hero ${selectedItem.name}: cached (trailer=${cached.isTrailer})")
+		// A remembered clip is only kept while the title still has no trailer:
+		// Trailarr may have saved one since, so look again (a quick lookup).
+		if (!cached.isTrailer) {
+			localTrailer(api, selectedItem)?.let { trailer ->
+				val trailerPreview = HomePreview(
+					item = selectedItem,
+					playableItem = trailer,
+					startPositionMs = 0L,
+					isTrailer = true,
+				)
+				HomePreviewCache.put(cacheKey, trailerPreview)
+				return trailerPreview
+			}
+		}
 		return cached.copy(item = selectedItem)
 	}
 
-	// JellyBridge Discover titles only contain a "favourite this to request it"
-	// placeholder video, so preview their real trailer instead (or nothing).
-	discoverTrailerKey(api, selectedItem)?.let { key ->
-		if (key.isEmpty()) return null
+	// JellyBridge Discover titles only contain a placeholder video: no preview.
+	if (isDiscoverPlaceholder(api, selectedItem)) return null
+
+	// Every film and show plays its trailer saved on the server (from Trailarr)
+	// when it has one: no internet needed, and trailers are SDR.
+	localTrailer(api, selectedItem)?.let { trailer ->
 		val trailerPreview = HomePreview(
 			item = selectedItem,
-			playableItem = selectedItem,
+			playableItem = trailer,
 			startPositionMs = 0L,
-			trailerKey = key,
+			isTrailer = true,
 		)
 		HomePreviewCache.put(cacheKey, trailerPreview)
 		return trailerPreview
 	}
 
+	// No saved trailer yet: a clip from the title itself.
+	android.util.Log.i("NOVA", "hero ${selectedItem.name} (${selectedItem.type}): no trailer, using a clip")
 	val resolvedItem = when (selectedItem.type) {
 		BaseItemKind.SERIES -> {
 			// The TV API is considerably faster than going through the legacy
@@ -325,22 +337,9 @@ private suspend fun createHomePreviewForItem(
 	val playableItem = refreshPlayableItem(api, resolvedItem)
 
 	// HDR / Dolby Vision files switch the TV into HDR mode, and some TVs then stay
-	// in the wrong colour mode after the short preview. Play the title's trailer
-	// for those instead (it's SDR), or just show the artwork.
-	if (isHdr(playableItem)) {
-		val config = NovaSeerr.config(api)
-		val full = runCatching { NovaSeerr.fullItem(api, selectedItem) }.getOrDefault(selectedItem)
-		val key = config?.let { trailerKeyFor(it, full) }.orEmpty()
-		if (key.isEmpty()) return null
-		val trailerPreview = HomePreview(
-			item = selectedItem,
-			playableItem = selectedItem,
-			startPositionMs = 0L,
-			trailerKey = key,
-		)
-		HomePreviewCache.put(cacheKey, trailerPreview)
-		return trailerPreview
-	}
+	// in the wrong colour mode after the short preview: just the artwork for those
+	// until Trailarr has saved their trailer.
+	if (isHdr(playableItem)) return null
 
 	val preview = HomePreview(
 		item = selectedItem,
@@ -380,9 +379,7 @@ fun rememberSelectedHomePreview(item: BaseItemDto?): HomePreview? {
 			Timber.w(error, "NOVA preview resolve failed: %s", item.name)
 			null
 		}
-		// Trailers still have to buffer from YouTube, so don't hold them back further.
-		val minimumWait = if (resolvedPreview?.trailerKey != null) 0L else 1_350L
-		val remainingDelay = minimumWait - (SystemClock.elapsedRealtime() - resolveStartedAt)
+		val remainingDelay = 1_350L - (SystemClock.elapsedRealtime() - resolveStartedAt)
 		if (remainingDelay > 0L) delay(remainingDelay)
 		preview = resolvedPreview
 	}
@@ -435,7 +432,8 @@ fun rememberRandomHomePreview(enabled: Boolean = true): HomePreview? {
 			}
 			if (randomPreview != null) preview = randomPreview
 
-			delay(30_000L)
+			// Let a trailer play to the end before moving on to the next title.
+			delay((preview?.playMs ?: 30_000L) + 1_000L)
 		}
 	}
 
@@ -506,7 +504,7 @@ fun HomePreviewPlayer(
 		currentOnPlayingChanged(false)
 
 		val activePreview = preview
-		if (activePreview == null || activePreview.trailerKey != null || suspended || !resumed) {
+		if (activePreview == null || suspended || !resumed) {
 			runCatching { playbackManager.state.stop() }
 			runCatching { playbackManager.queue.clear() }
 			return@LaunchedEffect
@@ -571,8 +569,9 @@ fun HomePreviewPlayer(
 			}
 		}
 
-		// 30-second preview: 28 seconds visible + a slow 2-second fade back.
-		delay(28_000L)
+		// Trailers play to the end; clips play for 30 seconds. Both finish with
+		// a slow 2-second fade back to the artwork.
+		delay(activePreview.playMs - 2_000L)
 		videoVisible = false
 		currentOnPlayingChanged(false)
 		delay(2_000L)
@@ -611,23 +610,7 @@ fun HomePreviewPlayer(
 
 	// The host stays composed even when preview == null, preserving the player
 	// for the next focused card. Only the video surface is conditional.
-	// Discover trailers: once one has played on this screen, keep the YouTube
-	// player in place (hidden when idle) so moving between titles stays instant.
-	val trailerKey = preview?.trailerKey?.takeIf { !suspended && resumed }
-	var trailerHostUsed by remember { mutableStateOf(false) }
-	if (trailerKey != null && !trailerHostUsed) {
-		SideEffect { trailerHostUsed = true }
-	}
-	if (trailerKey != null || trailerHostUsed) {
-		NovaTrailerPlayer(
-			youTubeKey = trailerKey,
-			backdropUrl = previewBackdrop?.getUrl(api, maxWidth = 1280, maxHeight = 720),
-			modifier = modifier,
-			onPlayingChanged = { currentOnPlayingChanged(it) },
-			onFinished = { currentOnPreviewFinished() },
-		)
-	}
-	if (preview != null && preview.trailerKey == null) {
+	if (preview != null) {
 		Box(modifier = modifier.clipToBounds()) {
 			val videoSize by playbackManager.state.videoSize.collectAsState()
 			val videoAspect = videoSize.aspectRatio.takeIf { it.isFinite() && it > 0f } ?: (16f / 9f)
@@ -653,6 +636,36 @@ fun HomePreviewPlayer(
 		}
 	}
 }
+
+/**
+ * The title's own trailer saved on the server (from Trailarr), if it has one.
+ * Newer Jellyfin servers only answer this when told which user is asking.
+ */
+suspend fun novaSavedTrailer(api: ApiClient, item: BaseItemDto): BaseItemDto? = withContext(Dispatchers.IO) {
+	val userId = org.koin.java.KoinJavaComponent
+		.get<org.jellyfin.androidtv.auth.repository.UserRepository>(org.jellyfin.androidtv.auth.repository.UserRepository::class.java)
+		.currentUser.value?.id
+	runCatching {
+		api.userLibraryApi.getLocalTrailers(itemId = item.id, userId = userId).content
+			.also { android.util.Log.i("NOVA", "trailer lookup ${item.name} (${item.id}) user=$userId -> ${it.size} found") }
+			// Prefer a properly named trailer file ("Title (Year)-trailer.mp4"), so a
+			// leftover temporary file Jellyfin still lists can't break playback.
+			.let { trailers ->
+				trailers.firstOrNull { it.path?.let { path -> Regex("-trailer\\.[A-Za-z0-9]+$").containsMatchIn(path) } == true }
+					?: trailers.firstOrNull()
+			}
+			?.let { trailer ->
+				runCatching { api.userLibraryApi.getItem(itemId = trailer.id, userId = userId).content }
+					.getOrDefault(trailer)
+			}
+	}.onFailure { android.util.Log.w("NOVA", "trailer lookup failed: ${item.name} (${item.id})", it) }.getOrNull()
+}
+
+/** The saved trailer for the hero (not HDR, so the TV keeps its normal colours). */
+private suspend fun localTrailer(api: ApiClient, item: BaseItemDto): BaseItemDto? =
+	novaSavedTrailer(api, item)?.takeIf { trailer ->
+		!isHdr(trailer).also { hdr -> if (hdr) android.util.Log.i("NOVA", "trailer for ${item.name} is HDR, skipped") }
+	}
 
 /** True when the title's video is HDR10 / HLG / Dolby Vision rather than normal (SDR). */
 private fun isHdr(item: BaseItemDto): Boolean {
